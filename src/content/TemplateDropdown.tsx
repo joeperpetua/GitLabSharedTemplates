@@ -7,6 +7,7 @@ import {
 	Search,
 } from "lucide-react";
 import type { TemplateFile, DropdownProps } from "./types";
+import { useI18n } from "../utils/i18n";
 
 // Developer logging setting state loaded from storage
 let developerLoggingEnabled = false;
@@ -31,6 +32,7 @@ function logDebug(...args: any[]) {
 }
 
 export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
+	const { t } = useI18n();
 	const [templates, setTemplates] = useState<TemplateFile[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
@@ -49,7 +51,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 		chrome.runtime.sendMessage({ type: "FETCH_TEMPLATES_LIST" }, (response) => {
 			if (chrome.runtime.lastError) {
 				console.warn("Extension connection error:", chrome.runtime.lastError);
-				setError("Extension background service inactive. Reload page.");
+				setError(t("dropdown.extensionInactive"));
 				setLoading(false);
 				return;
 			}
@@ -59,7 +61,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 			} else {
 				setError(
 					response?.error ||
-						"Failed to load templates. Check extension settings.",
+						t("dropdown.failedLoadTemplates"),
 				);
 			}
 			setLoading(false);
@@ -130,14 +132,14 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 				setInserting(false);
 
 				if (chrome.runtime.lastError) {
-					setError("Failed to fetch template content.");
+					setError(t("dropdown.failedFetchContent"));
 					return;
 				}
 
 				if (response && response.success) {
 					insertContent(response.data);
 				} else {
-					setError(response?.error || "Failed to fetch template content.");
+					setError(response?.error || t("dropdown.failedFetchContent"));
 				}
 			},
 		);
@@ -212,11 +214,11 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 	};
 
 	const getActiveTemplateName = () => {
-		if (inserting) return "Inserting...";
+		if (inserting) return t("dropdown.inserting");
 		const active = templates.find((t) => t.path === selectedPath);
 		return active
 			? formatTemplateName(active.name)
-			: "Choose a shared template";
+			: t("dropdown.chooseTemplate");
 	};
 
 	if (loading) {
@@ -258,7 +260,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 							fill: "none",
 						}}
 					/>{" "}
-					Retry
+					{t("dropdown.retry")}
 				</button>
 			</div>
 		);
@@ -324,7 +326,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 
 			{isOpen && (
 				<div className="gl-template-menu">
-					<div className="gl-template-menu-header">Select template</div>
+					<div className="gl-template-menu-header">{t("dropdown.selectTemplate")}</div>
 
 					<div className="gl-template-menu-search-wrapper">
 						<Search
@@ -338,7 +340,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 						/>
 						<input
 							type="search"
-							placeholder="Search"
+							placeholder={t("dropdown.search")}
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							className="gl-template-search-input"
@@ -346,12 +348,12 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 						/>
 					</div>
 
-					<div className="gl-template-menu-category">Shared Templates</div>
+					<div className="gl-template-menu-category">{t("dropdown.sharedTemplates")}</div>
 
 					<div className="gl-template-menu-options-list">
 						{filteredTemplates.length === 0 ? (
 							<div className="gl-template-menu-no-results">
-								No results found
+								{t("dropdown.noResults")}
 							</div>
 						) : (
 							filteredTemplates.map((template) => {
@@ -395,13 +397,13 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 							className="gl-mt-2 !gl-justify-start btn gl-button btn-default btn-md btn-block btn-default-tertiary"
 							onClick={handleNoTemplate}
 						>
-							No template
+							{t("dropdown.noTemplate")}
 						</button>
 						<button
 							className="gl-mt-2 !gl-justify-start btn gl-button btn-default btn-md btn-block btn-default-tertiary"
 							onClick={handleResetTemplate}
 						>
-							Reset template
+							{t("dropdown.resetTemplate")}
 						</button>
 						<div className="gl-template-menu-divider"></div>
 						<button
@@ -409,7 +411,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 							style={{ color: "#3894ff" }}
 							onClick={handleOpenSettings}
 						>
-							Open settings
+							{t("dropdown.openSettings")}
 						</button>
 					</div>
 				</div>
