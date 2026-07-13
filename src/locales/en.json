@@ -56,5 +56,11 @@
     "resetTemplate": "Reset template",
     "openSettings": "Open settings",
     "retry": "Retry"
+  },
+  "landing": {
+    "title": "GitLab Shared Templates",
+    "description": "Integrate custom Markdown templates into GitLab Issues and Merge Requests.",
+    "configureButton": "Configure Extension",
+    "helpText": "Click to configure your templates and credentials."
   }
 }

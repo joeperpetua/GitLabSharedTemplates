@@ -56,5 +56,11 @@
     "resetTemplate": "Vorlage zurücksetzen",
     "openSettings": "Einstellungen öffnen",
     "retry": "Wiederholen"
+  },
+  "landing": {
+    "title": "GitLab Shared Templates",
+    "description": "Integrieren Sie benutzerdefinierte Markdown-Vorlagen in GitLab-Issues und Merge-Requests.",
+    "configureButton": "Erweiterung konfigurieren",
+    "helpText": "Klicken Sie hier, um Ihre Vorlagen und Anmeldedaten zu konfigurieren."
   }
 }
