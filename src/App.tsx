@@ -1,4 +1,3 @@
-import React from 'react';
 import { Settings, HelpCircle, ArrowRight } from 'lucide-react';
 import { useI18n } from './utils/i18n';
 

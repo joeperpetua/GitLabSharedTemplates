@@ -3,6 +3,11 @@
   "name": "GitLab Shared Templates",
   "version": "1.0.0",
   "description": "Integrate custom Markdown templates into GitLab Issues and Merge Requests.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "storage",
     "activeTab",
@@ -28,6 +33,11 @@
   ],
   "options_page": "options.html",
   "action": {
-    "default_title": "GitLab Shared Templates"
+    "default_title": "GitLab Shared Templates",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   }
 }
