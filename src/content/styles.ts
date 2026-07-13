@@ -6,6 +6,98 @@ export const injectStyles = () => {
 	const styleEl = document.createElement("style");
 	styleEl.id = STYLE_ID;
 	styleEl.textContent = `
+    /* Light Mode (default GitLab colors) */
+    :root {
+      --gl-template-bg: #ffffff;
+      --gl-template-border: #dbdbdb;
+      --gl-template-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+      --gl-template-text-primary: #1f1f1f;
+      --gl-template-text-secondary: #5e646e;
+      --gl-template-search-bg: #ffffff;
+      --gl-template-search-border: #89929b;
+      --gl-template-search-focus-border: #3894ff;
+      --gl-template-option-hover-bg: #f2f2f2;
+      --gl-template-option-hover-text: #1f1f1f;
+      --gl-template-option-selected-bg: #e9f2ff;
+      --gl-template-option-selected-border: #3894ff;
+      --gl-template-option-selected-text: #1f1f1f;
+      --gl-template-badge-bg: #f2f2f2;
+      --gl-template-badge-border: #dbdbdb;
+      --gl-template-badge-text: #5e646e;
+      --gl-template-error-bg: #fff5f5;
+      --gl-template-error-border: #ffc9c9;
+      --gl-template-error-text: #fa5252;
+    }
+
+    /* Dark Mode (when html or body has .gl-dark or .dark, or dark mode preferred) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --gl-template-bg: #1e1e24;
+        --gl-template-border: #2d2e36;
+        --gl-template-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+        --gl-template-text-primary: #ffffff;
+        --gl-template-text-secondary: #89929b;
+        --gl-template-search-bg: #16171d;
+        --gl-template-search-border: #3c3e47;
+        --gl-template-search-focus-border: #3894ff;
+        --gl-template-option-hover-bg: #2b2d35;
+        --gl-template-option-hover-text: #ffffff;
+        --gl-template-option-selected-bg: rgba(56, 148, 255, 0.12);
+        --gl-template-option-selected-border: #3894ff;
+        --gl-template-option-selected-text: #ffffff;
+        --gl-template-badge-bg: #1e1e24;
+        --gl-template-badge-border: #2d2e36;
+        --gl-template-badge-text: #89929b;
+        --gl-template-error-bg: rgba(255, 107, 107, 0.08);
+        --gl-template-error-border: rgba(255, 107, 107, 0.2);
+        --gl-template-error-text: #ff6b6b;
+      }
+    }
+
+    html.gl-dark, body.gl-dark, html.dark, body.dark, [data-theme="dark"] {
+      --gl-template-bg: #1e1e24;
+      --gl-template-border: #2d2e36;
+      --gl-template-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      --gl-template-text-primary: #ffffff;
+      --gl-template-text-secondary: #89929b;
+      --gl-template-search-bg: #16171d;
+      --gl-template-search-border: #3c3e47;
+      --gl-template-search-focus-border: #3894ff;
+      --gl-template-option-hover-bg: #2b2d35;
+      --gl-template-option-hover-text: #ffffff;
+      --gl-template-option-selected-bg: rgba(56, 148, 255, 0.12);
+      --gl-template-option-selected-border: #3894ff;
+      --gl-template-option-selected-text: #ffffff;
+      --gl-template-badge-bg: #1e1e24;
+      --gl-template-badge-border: #2d2e36;
+      --gl-template-badge-text: #89929b;
+      --gl-template-error-bg: rgba(255, 107, 107, 0.08);
+      --gl-template-error-border: rgba(255, 107, 107, 0.2);
+      --gl-template-error-text: #ff6b6b;
+    }
+
+    html.gl-light, body.gl-light, html.light, body.light, [data-theme="light"] {
+      --gl-template-bg: #ffffff;
+      --gl-template-border: #dbdbdb;
+      --gl-template-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04);
+      --gl-template-text-primary: #1f1f1f;
+      --gl-template-text-secondary: #5e646e;
+      --gl-template-search-bg: #ffffff;
+      --gl-template-search-border: #89929b;
+      --gl-template-search-focus-border: #3894ff;
+      --gl-template-option-hover-bg: #f2f2f2;
+      --gl-template-option-hover-text: #1f1f1f;
+      --gl-template-option-selected-bg: #e9f2ff;
+      --gl-template-option-selected-border: #3894ff;
+      --gl-template-option-selected-text: #1f1f1f;
+      --gl-template-badge-bg: #f2f2f2;
+      --gl-template-badge-border: #dbdbdb;
+      --gl-template-badge-text: #5e646e;
+      --gl-template-error-bg: #fff5f5;
+      --gl-template-error-border: #ffc9c9;
+      --gl-template-error-text: #fa5252;
+    }
+
     .gl-shared-templates-container {
       display: inline-flex;
       align-items: center;
@@ -17,16 +109,17 @@ export const injectStyles = () => {
       font-family: "GitLab Sans", "Gitlab Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       display: inline-block;
     }
+    
     /* Menu Popover Container */
     .gl-template-menu {
       position: absolute;
       top: 100%;
       left: 0;
       margin-top: 8px;
-      background-color: #1e1e24;
-      border: 1px solid #2d2e36;
+      background-color: var(--gl-template-bg);
+      border: 1px solid var(--gl-template-border);
       border-radius: 8px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+      box-shadow: var(--gl-template-shadow);
       z-index: 99999;
       min-width: 230px;
       max-width: 280px;
@@ -40,7 +133,7 @@ export const injectStyles = () => {
       left: 20px;
       border-width: 6px;
       border-style: solid;
-      border-color: transparent transparent #1e1e24 transparent;
+      border-color: transparent transparent var(--gl-template-bg) transparent;
       pointer-events: none;
     }
     .gl-template-menu::after {
@@ -50,7 +143,7 @@ export const injectStyles = () => {
       left: 20px;
       border-width: 7px;
       border-style: solid;
-      border-color: transparent transparent #2d2e36 transparent;
+      border-color: transparent transparent var(--gl-template-border) transparent;
       z-index: -1;
       pointer-events: none;
     }
@@ -59,9 +152,9 @@ export const injectStyles = () => {
     .gl-template-menu-header {
       font-size: 13px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--gl-template-text-primary);
       padding: 10px 12px;
-      border-bottom: 1px solid #2d2e36;
+      border-bottom: 1px solid var(--gl-template-border);
       text-align: left;
     }
     
@@ -69,7 +162,7 @@ export const injectStyles = () => {
     .gl-template-menu-search-wrapper {
       padding: 8px;
       position: relative;
-      border-bottom: 1px solid #2d2e36;
+      border-bottom: 1px solid var(--gl-template-border);
     }
     
     .gl-template-search-icon {
@@ -79,31 +172,31 @@ export const injectStyles = () => {
       transform: translateY(-50%);
       width: 12px;
       height: 12px;
-      color: #89929b;
+      color: var(--gl-template-text-secondary);
       pointer-events: none;
     }
     
     .gl-template-search-input {
       width: 100%;
-      background-color: #16171d;
-      border: 1px solid #3c3e47;
+      background-color: var(--gl-template-search-bg);
+      border: 1px solid var(--gl-template-search-border);
       border-radius: 4px;
       padding: 6px 12px 6px 28px;
       font-size: 13px;
-      color: #ffffff;
+      color: var(--gl-template-text-primary);
       box-sizing: border-box;
     }
     
     .gl-template-search-input:focus {
       outline: none;
-      border-color: #3894ff;
+      border-color: var(--gl-template-search-focus-border);
     }
     
     /* Category label */
     .gl-template-menu-category {
       font-size: 12px;
       font-weight: 600;
-      color: #ffffff;
+      color: var(--gl-template-text-primary);
       padding: 10px 12px 6px;
       text-align: left;
     }
@@ -121,7 +214,7 @@ export const injectStyles = () => {
       align-items: center;
       padding: 8px 10px;
       font-size: 13px;
-      color: var(--gl-dropdown-option-text-color-default);
+      color: var(--gl-template-text-primary);
       border-radius: 6px;
       cursor: pointer;
       user-select: none;
@@ -137,20 +230,20 @@ export const injectStyles = () => {
       margin-bottom: 0;
     }
     .gl-template-option:hover {
-      background-color: #2b2d35;
-      color: #ffffff;
+      background-color: var(--gl-template-option-hover-bg);
+      color: var(--gl-template-option-hover-text);
     }
     .gl-template-option.selected {
-      border-color: #3894ff;
-      background-color: rgba(56, 148, 255, 0.12);
-      color: #ffffff;
+      border-color: var(--gl-template-option-selected-border);
+      background-color: var(--gl-template-option-selected-bg);
+      color: var(--gl-template-option-selected-text);
     }
     .gl-template-option-check {
       position: absolute;
       left: 8px;
       top: 50%;
       transform: translateY(-50%);
-      color: #3894ff;
+      color: var(--gl-template-option-selected-border);
       width: 12px;
       height: 12px;
       display: flex;
@@ -161,14 +254,14 @@ export const injectStyles = () => {
     /* Divider and Footer buttons */
     .gl-template-menu-divider {
       height: 1px;
-      background-color: #2d2e36;
+      background-color: var(--gl-template-border);
       margin: 4px 0;
     }
     
     .gl-template-footer-btn {
       padding: 8px 12px;
       font-size: 13px;
-      color: #c9d1d9;
+      color: var(--gl-template-text-primary);
       cursor: pointer;
       text-align: left;
       transition: background-color 0.15s ease, color 0.15s ease;
@@ -178,13 +271,13 @@ export const injectStyles = () => {
     }
     
     .gl-template-footer-btn:hover {
-      background-color: #2b2d35;
-      color: #ffffff;
+      background-color: var(--gl-template-option-hover-bg);
+      color: var(--gl-template-option-hover-text);
     }
     
     .gl-template-menu-no-results {
       font-size: 13px;
-      color: #89929b;
+      color: var(--gl-template-text-secondary);
       padding: 12px;
       text-align: center;
     }
@@ -204,21 +297,21 @@ export const injectStyles = () => {
       gap: 6px;
       padding: 6px 12px;
       font-size: 12px;
-      color: #89929b;
-      background-color: #1e1e24;
-      border: 1px solid #2d2e36;
+      color: var(--gl-template-badge-text);
+      background-color: var(--gl-template-badge-bg);
+      border: 1px solid var(--gl-template-badge-border);
       border-radius: 6px;
       font-family: "GitLab Sans", "Gitlab Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     .gl-template-status-error {
-      color: #ff6b6b;
-      background-color: rgba(255, 107, 107, 0.08);
-      border-color: rgba(255, 107, 107, 0.2);
+      color: var(--gl-template-error-text);
+      background-color: var(--gl-template-error-bg);
+      border-color: var(--gl-template-error-border);
     }
     .gl-template-status-retry-btn {
       background: none;
       border: none;
-      color: #3894ff;
+      color: var(--gl-template-option-selected-border);
       cursor: pointer;
       text-decoration: underline;
       padding: 0;
@@ -229,7 +322,7 @@ export const injectStyles = () => {
       gap: 4px;
     }
     .gl-template-status-retry-btn:hover {
-      color: #58a6ff;
+      color: #3894ff;
     }
     .gl-template-spin {
       animation: gl-spin 1.2s linear infinite;
