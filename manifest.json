@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "GitLab Shared Templates",
+  "version": "1.0.0",
+  "description": "Integrate custom Markdown templates into GitLab Issues and Merge Requests.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://gitlab.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": ["src/content/index.tsx"],
+      "matches": ["https://gitlab.com/*"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_page": "options.html",
+  "action": {
+    "default_title": "GitLab Shared Templates"
+  }
+}
