@@ -133,20 +133,51 @@ function injectDropdowns() {
 			logDebug(`[Ext] Textarea "${containerId}" injection finalized.`);
 		} else {
 			// Original dropdown not found in DOM yet.
-			// Find the form-group div that contains the editor wrapper and label to prepend our dropdown under the label
+			// Try to find the Description label within the form group to insert our dropdown below the header
+			const label = formGroup?.querySelector("label");
 			const formDiv = formGroup?.querySelector(":scope > div");
-			logDebug(`[Ext] Form group wrapper exists: ${!!formGroup}, Inputs container div exists: ${!!formDiv}`);
+			logDebug(`[Ext] Form group wrapper exists: ${!!formGroup}, Label exists: ${!!label}, Inputs container div exists: ${!!formDiv}`);
+
+			// Find top-level child in formGroup wrapping the label (e.g. the flex header wrapper or label itself)
+			let insertTarget: Element | null = null;
+			if (label) {
+				const parentLimit = formGroup || textarea.parentNode;
+				insertTarget = label;
+				while (insertTarget.parentElement && insertTarget.parentElement !== parentLimit) {
+					insertTarget = insertTarget.parentElement;
+				}
+			}
 
 			if (container) {
-				// If container exists, check if it's placed under the Description label wrapper
-				if (formDiv && formDiv.firstChild !== container) {
-					logDebug(
-						"[Ext] Relocating existing fallback dropdown directly under Description title.",
-					);
-					formDiv.insertBefore(container, formDiv.firstChild);
-					container.style.marginLeft = "0px"; // Align with left edge
+				// If container exists, check if it's positioned correctly
+				let isPositionedCorrectly = false;
+				if (insertTarget) {
+					isPositionedCorrectly = insertTarget.nextSibling === container;
+				} else if (formDiv) {
+					isPositionedCorrectly = formDiv.firstChild === container;
 				} else {
-					logDebug(`[Ext] Fallback dropdown is already positioned correctly under Description title. Waiting for original dropdown...`);
+					isPositionedCorrectly = textarea.previousSibling === container;
+				}
+
+				if (!isPositionedCorrectly) {
+					logDebug(
+						"[Ext] Relocating existing fallback dropdown to correct position.",
+					);
+					if (insertTarget) {
+						insertTarget.parentNode?.insertBefore(container, insertTarget.nextSibling);
+						container.style.marginLeft = "0px";
+						container.style.marginBottom = "12px";
+					} else if (formDiv) {
+						formDiv.insertBefore(container, formDiv.firstChild);
+						container.style.marginLeft = "0px";
+						container.style.marginBottom = "0px";
+					} else {
+						textarea.parentNode?.insertBefore(container, textarea);
+						container.style.marginLeft = "0px";
+						container.style.marginBottom = "0px";
+					}
+				} else {
+					logDebug(`[Ext] Fallback dropdown is already positioned correctly. Waiting for original dropdown...`);
 				}
 
 				// Double-render check: ensure React is mounted
@@ -159,21 +190,26 @@ function injectDropdowns() {
 				return;
 			}
 
-			if (formDiv || textarea.parentNode) {
+			if (insertTarget || formDiv || textarea.parentNode) {
 				logDebug(
-					"[Ext] Prepending fallback shared templates dropdown directly under Description title.",
+					"[Ext] Injecting fallback shared templates dropdown.",
 				);
 				container = document.createElement("div");
 				container.className = "gl-shared-templates-container";
 				container.setAttribute("data-textarea-id", containerId);
-				container.style.marginLeft = "0px"; // Align with left edge
 
-				if (formDiv) {
-					// Prepend at the beginning of the form inputs container (above the editor wrapper)
+				if (insertTarget) {
+					insertTarget.parentNode?.insertBefore(container, insertTarget.nextSibling);
+					container.style.marginLeft = "0px";
+					container.style.marginBottom = "12px";
+				} else if (formDiv) {
 					formDiv.insertBefore(container, formDiv.firstChild);
+					container.style.marginLeft = "0px";
+					container.style.marginBottom = "0px";
 				} else {
-					// Fallback to inserting directly before the textarea
 					textarea.parentNode?.insertBefore(container, textarea);
+					container.style.marginLeft = "0px";
+					container.style.marginBottom = "0px";
 				}
 
 				const root = createRoot(container);
