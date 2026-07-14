@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GitLab Shared Templates",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Integrate custom Markdown templates into GitLab Issues and Merge Requests for any project.",
   "homepage_url": "https://github.com/joeperpetua/GitLabSharedTemplates",
   "icons": {
