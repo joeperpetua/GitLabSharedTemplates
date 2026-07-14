@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { ZipArchive } from 'archiver';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,41 +108,43 @@ function updateBuildManifest(dirPath, version) {
 }
 
 function packDirectory(sourceDir, outputZip) {
-  const sourcePath = path.resolve(__dirname, sourceDir);
-  if (!fs.existsSync(sourcePath)) {
-    console.error(`Error: Source directory '${sourceDir}' does not exist. Skipping packing.`);
-    return false;
-  }
-  
-  console.log(`Packing '${sourceDir}' into '${outputZip}'...`);
-  
-  const outputZipPath = path.resolve(__dirname, outputZip);
-  const outputDir = path.dirname(outputZipPath);
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-  
-  if (fs.existsSync(outputZipPath)) {
-    fs.unlinkSync(outputZipPath);
-  }
-  
-  try {
-    if (process.platform === 'win32') {
-      const winSourcePath = path.join(sourcePath, '*');
-      const winOutputPath = outputZipPath;
-      execSync(`powershell -Command "Compress-Archive -Path '${winSourcePath}' -DestinationPath '${winOutputPath}' -Force"`, { stdio: 'ignore' });
-    } else {
-      execSync(`cd "${sourcePath}" && zip -r "${outputZipPath}" .`, { stdio: 'ignore', shell: true });
+  return new Promise((resolve) => {
+    const sourcePath = path.resolve(__dirname, sourceDir);
+    if (!fs.existsSync(sourcePath)) {
+      console.error(`Error: Source directory '${sourceDir}' does not exist. Skipping packing.`);
+      return resolve(false);
     }
-    console.log(`Successfully created: ${outputZip}`);
-    return true;
-  } catch (err) {
-    console.error(`Error zipping '${sourceDir}': ${err.message}`);
-    return false;
-  }
+    
+    console.log(`Packing '${sourceDir}' into '${outputZip}'...`);
+    
+    const outputZipPath = path.resolve(__dirname, outputZip);
+    const outputDir = path.dirname(outputZipPath);
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
+    
+    const output = fs.createWriteStream(outputZipPath);
+    const archive = new ZipArchive({
+      zlib: { level: 9 }
+    });
+    
+    output.on('close', () => {
+      console.log(`Successfully created: ${outputZip} (${archive.pointer()} total bytes)`);
+      resolve(true);
+    });
+    
+    archive.on('error', (err) => {
+      console.error(`Error zipping '${sourceDir}': ${err.message}`);
+      resolve(false);
+    });
+    
+    archive.pipe(output);
+    archive.directory(sourcePath, false);
+    archive.finalize();
+  });
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
   let explicitVersion = null;
   let bump = 'patch';
@@ -213,8 +216,8 @@ Examples:
   const chromeZip = path.join('build', `gitlab-shared-templates-${targetVersion}-chrome.zip`);
   const firefoxZip = path.join('build', `gitlab-shared-templates-${targetVersion}-firefox.zip`);
 
-  packDirectory('dist', chromeZip);
-  packDirectory('dist-firefox', firefox_zip_path_resolution_check_optional(firefoxZip));
+  await packDirectory('dist', chromeZip);
+  await packDirectory('dist-firefox', firefox_zip_path_resolution_check_optional(firefoxZip));
 
   console.log('='.repeat(64));
   console.log('Packing complete!');
