@@ -9,3 +9,373 @@
 .animate-pulse-subtle {
   animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* GitLab Pajamas CSS Variables and Styles for settings page */
+.settings-page-wrapper {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans", Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 48px 16px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.settings-page-wrapper.light {
+  background-color: #ffffff;
+  color: #1f1f1f;
+
+  --gl-bg-page: #ffffff;
+  --gl-bg-card: #ffffff;
+  --gl-bg-card-footer: #fafafa;
+  --gl-border-color: #dbdbdb;
+  --gl-text-primary: #1f1f1f;
+  --gl-text-secondary: #5e646e;
+  --gl-text-muted: #89929b;
+  --gl-input-bg: #ffffff;
+  --gl-input-border: #89929b;
+  --gl-input-focus-border: #1f75cb;
+  --gl-input-focus-ring: rgba(31, 117, 203, 0.2);
+  --gl-btn-primary-bg: #1f75cb;
+  --gl-btn-primary-hover: #1068bf;
+  --gl-btn-primary-text: #ffffff;
+  --gl-btn-secondary-bg: #ffffff;
+  --gl-btn-secondary-border: #89929b;
+  --gl-btn-secondary-text: #1f1f1f;
+  --gl-btn-secondary-hover: #f2f2f2;
+  --gl-btn-secondary-active: #e9e9e9;
+  --gl-link-color: #1f75cb;
+  
+  --gl-success-bg: #ecfdf5;
+  --gl-success-border: #a7f3d0;
+  --gl-success-text: #065f46;
+  --gl-error-bg: #fef2f2;
+  --gl-error-border: #fecaca;
+  --gl-error-text: #991b1b;
+}
+
+.settings-page-wrapper.dark {
+  background-color: #181818;
+  color: #e4e4e4;
+
+  --gl-bg-page: #181818;
+  --gl-bg-card: #1f1f1f;
+  --gl-bg-card-footer: #181818;
+  --gl-border-color: #303030;
+  --gl-text-primary: #e4e4e4;
+  --gl-text-secondary: #8c8c8c;
+  --gl-text-muted: #525252;
+  --gl-input-bg: #181818;
+  --gl-input-border: #525252;
+  --gl-input-focus-border: #3894ff;
+  --gl-input-focus-ring: rgba(56, 148, 255, 0.25);
+  --gl-btn-primary-bg: #1f75cb;
+  --gl-btn-primary-hover: #1068bf;
+  --gl-btn-primary-text: #ffffff;
+  --gl-btn-secondary-bg: #1f1f1f;
+  --gl-btn-secondary-border: #525252;
+  --gl-btn-secondary-text: #e4e4e4;
+  --gl-btn-secondary-hover: #282828;
+  --gl-btn-secondary-active: #303030;
+  --gl-link-color: #3894ff;
+  
+  --gl-success-bg: rgba(16, 185, 129, 0.08);
+  --gl-success-border: rgba(16, 185, 129, 0.2);
+  --gl-success-text: #34d399;
+  --gl-error-bg: rgba(239, 68, 68, 0.08);
+  --gl-error-border: rgba(239, 68, 68, 0.2);
+  --gl-error-text: #f87171;
+}
+
+/* Custom Pajamas UI Styles */
+.gl-heading {
+  font-size: 23px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: var(--gl-text-primary);
+}
+
+.gl-card {
+  width: 100%;
+  max-width: 960px;
+  background-color: var(--gl-bg-card);
+  border: 1px solid var(--gl-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.gl-card-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--gl-border-color);
+}
+
+.gl-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gl-text-primary);
+  margin-bottom: 4px;
+}
+
+.gl-card-subtitle {
+  font-size: 13px;
+  color: var(--gl-text-secondary);
+}
+
+.gl-card-body {
+  padding: 24px;
+}
+
+.gl-card-footer {
+  padding: 16px 24px;
+  background-color: var(--gl-bg-card-footer);
+  border-top: 1px solid var(--gl-border-color);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Form Styles */
+.gl-form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.gl-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gl-text-primary);
+  margin-bottom: 4px;
+}
+
+.gl-label-required {
+  color: #db3b21;
+  margin-left: 2px;
+}
+
+.gl-input {
+  background-color: var(--gl-input-bg);
+  border: 1px solid var(--gl-input-border);
+  border-radius: 4px;
+  color: var(--gl-text-primary);
+  font-size: 14px;
+  padding: 8px 12px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.gl-input:focus {
+  border-color: var(--gl-input-focus-border);
+  box-shadow: 0 0 0 1px var(--gl-input-bg), 0 0 0 3px var(--gl-input-focus-border);
+}
+
+.gl-input::placeholder {
+  color: var(--gl-text-secondary);
+  opacity: 0.6;
+}
+
+.gl-help-text {
+  font-size: 13px;
+  color: var(--gl-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Advanced Options Summary */
+.gl-details {
+  border-top: 1px solid var(--gl-border-color);
+  padding-top: 16px;
+  margin-top: 24px;
+}
+
+.gl-summary {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gl-text-primary);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.gl-summary::-webkit-details-marker {
+  display: none;
+}
+
+.gl-summary-icon {
+  margin-right: 6px;
+  transition: transform 0.2s ease;
+}
+
+.gl-details[open] .gl-summary-icon {
+  transform: rotate(90deg);
+}
+
+/* Radios and Checkboxes */
+.gl-radio-group {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.gl-radio-container {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  cursor: pointer;
+}
+
+.gl-radio-input {
+  margin-top: 3px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  accent-color: #1f75cb;
+}
+
+.gl-radio-label {
+  font-size: 14px;
+  color: var(--gl-text-primary);
+}
+
+.gl-checkbox-container {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.gl-checkbox-input {
+  margin-top: 3px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  accent-color: #1f75cb;
+}
+
+.gl-checkbox-label {
+  font-size: 14px;
+  color: var(--gl-text-primary);
+}
+
+/* Buttons */
+.gl-btn {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  line-height: 1.4;
+}
+
+.gl-btn-primary {
+  background-color: var(--gl-btn-primary-bg);
+  color: var(--gl-btn-primary-text);
+  border: 1px solid transparent;
+}
+
+.gl-btn-primary:hover:not(:disabled) {
+  background-color: var(--gl-btn-primary-hover);
+}
+
+.gl-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.gl-btn-secondary {
+  background-color: var(--gl-btn-secondary-bg);
+  border: 1px solid var(--gl-btn-secondary-border);
+  color: var(--gl-btn-secondary-text);
+}
+
+.gl-btn-secondary:hover:not(:disabled) {
+  background-color: var(--gl-btn-secondary-hover);
+  border-color: var(--gl-btn-secondary-border);
+}
+
+.gl-btn-secondary:active:not(:disabled) {
+  background-color: var(--gl-btn-secondary-active);
+}
+
+.gl-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Alerts */
+.gl-alert {
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.gl-alert-success {
+  background-color: var(--gl-success-bg);
+  border: 1px solid var(--gl-success-border);
+  color: var(--gl-success-text);
+}
+
+.gl-alert-error {
+  background-color: var(--gl-error-bg);
+  border: 1px solid var(--gl-error-border);
+  color: var(--gl-error-text);
+}
+
+.gl-alert-title {
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.gl-alert-icon {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Footer Help Link */
+.gl-footer-info {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--gl-text-secondary);
+  text-align: center;
+}
+
+.gl-footer-link {
+  color: var(--gl-link-color);
+  text-decoration: none;
+}
+
+.gl-footer-link:hover {
+  text-decoration: underline;
+}
+
+/* Theme Toggle Button */
+.theme-toggle-btn {
+  background: transparent;
+  border: 1px solid var(--gl-border-color);
+  color: var(--gl-text-primary);
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--gl-btn-secondary-hover);
+}
+

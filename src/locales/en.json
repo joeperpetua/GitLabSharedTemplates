@@ -1,6 +1,7 @@
 {
   "options": {
     "loading": "Loading settings...",
+    "integrationSettings": "GitLab Integration Settings",
     "title": "GitLab Shared Templates",
     "subtitle": "Configure your templates repository and credentials",
     "customDomain": "Custom GitLab Domain",
@@ -20,11 +21,13 @@
     "developerSettings": "Developer Settings",
     "enableLogging": "Enable Developer Logging (Outputs logs to DevTools Console)",
     "enableLoggingHelp": "Check this box to enable verbose debugging logs in the browser console for DOM injection tracing.",
+    "saveChanges": "Save Changes",
     "saveSettings": "Save Settings",
     "saving": "Saving...",
     "testConnection": "Test Connection",
     "testing": "Testing...",
     "needHelp": "Need help? Check your GitLab repository permissions.",
+    "issuesAndDocs": "Issues & Docs",
     "language": "Language",
     "selectLanguage": "Select Language",
     "languageHelp": "Choose the interface language for settings and dropdowns.",

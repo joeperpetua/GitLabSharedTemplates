@@ -1,6 +1,7 @@
 {
   "options": {
     "loading": "Einstellungen werden geladen...",
+    "integrationSettings": "GitLab-Integrationseinstellungen",
     "title": "GitLab Shared Templates",
     "subtitle": "Konfigurieren Sie Ihr Vorlagen-Repository und Ihre Zugangsdaten",
     "customDomain": "Benutzerdefinierte GitLab-Domain",
@@ -20,11 +21,13 @@
     "developerSettings": "Entwickler-Einstellungen",
     "enableLogging": "Entwickler-Protokollierung aktivieren (Ausgabe in DevTools-Konsole)",
     "enableLoggingHelp": "Aktivieren Sie dieses Kontrollkästchen, um detaillierte Debug-Protokolle in der Browser-Konsole für die DOM-Injektionsverfolgung anzuzeigen.",
+    "saveChanges": "Änderungen speichern",
     "saveSettings": "Einstellungen speichern",
     "saving": "Speichert...",
     "testConnection": "Verbindung testen",
     "testing": "Testet...",
     "needHelp": "Benötigen Sie Hilfe? Überprüfen Sie Ihre GitLab-Repository-Berechtigungen.",
+    "issuesAndDocs": "Issues & Dokumentation",
     "language": "Sprache",
     "selectLanguage": "Sprache auswählen",
     "languageHelp": "Wählen Sie die Benutzeroberflächen-Sprache für Einstellungen und Dropdowns.",

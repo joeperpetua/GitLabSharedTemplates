@@ -1,18 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Settings, 
-  KeyRound, 
-  FolderGit2, 
-  Globe, 
-  Save, 
   CheckCircle2, 
   AlertCircle, 
   Loader2, 
-  HelpCircle,
-  Play,
   ChevronDown,
-  ChevronUp,
-  Languages
+  Sun,
+  Moon
 } from 'lucide-react';
 import { normalizeGitLabDomain, extractProjectPath } from '../utils/gitlab';
 import { useI18n, languageNames } from '../utils/i18n';
@@ -26,6 +19,7 @@ export default function OptionsApp() {
   const [shouldOverwrite, setShouldOverwrite] = useState(true);
   const [enableLogging, setEnableLogging] = useState(false);
   const [language, setLanguage] = useState<LanguageCode>('en');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [loading, setLoading] = useState(true);
@@ -50,6 +44,7 @@ export default function OptionsApp() {
         shouldOverwrite: true,
         enableLogging: false,
         language: 'en',
+        theme: null,
       },
       (items) => {
         const typedItems = items as { 
@@ -59,6 +54,7 @@ export default function OptionsApp() {
           shouldOverwrite?: boolean; 
           enableLogging?: boolean;
           language?: string;
+          theme?: 'light' | 'dark' | null;
         };
         setRepoUrl(typedItems.repoUrl || '');
         setPat(typedItems.pat || '');
@@ -66,10 +62,34 @@ export default function OptionsApp() {
         setShouldOverwrite(typedItems.shouldOverwrite ?? true);
         setEnableLogging(typedItems.enableLogging ?? false);
         setLanguage((typedItems.language as LanguageCode) || 'en');
+        
+        let initialTheme = typedItems.theme;
+        if (!initialTheme) {
+          initialTheme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+        }
+        setTheme(initialTheme);
         setLoading(false);
       }
     );
   }, []);
+
+  // Sync body theme class
+  useEffect(() => {
+    const body = document.body;
+    if (theme === 'dark') {
+      body.classList.remove('bg-white', 'text-slate-900');
+      body.classList.add('bg-[#181818]', 'text-slate-100');
+    } else {
+      body.classList.remove('bg-slate-900', 'bg-[#181818]', 'text-slate-100');
+      body.classList.add('bg-white', 'text-slate-900');
+    }
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+    chrome.storage.sync.set({ theme: newTheme });
+  };
 
   // Request permissions for custom domain if needed
   const handlePermissions = async (domain: string): Promise<boolean> => {
@@ -219,186 +239,224 @@ export default function OptionsApp() {
     );
   };
 
+  const renderHelpText = () => {
+    const fullText = t('options.needHelp');
+    const linkTextEn = "Check your GitLab repository permissions";
+    const linkTextDe = "Überprüfen Sie Ihre GitLab-Repository-Berechtigungen";
+    
+    if (fullText.includes(linkTextEn)) {
+      const parts = fullText.split(linkTextEn);
+      return (
+        <>
+          {parts[0]}
+          <a href="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html" target="_blank" rel="noopener noreferrer" className="gl-footer-link">
+            {linkTextEn}
+          </a>
+          {parts[1]}
+        </>
+      );
+    } else if (fullText.includes(linkTextDe)) {
+      const parts = fullText.split(linkTextDe);
+      return (
+        <>
+          {parts[0]}
+          <a href="https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html" target="_blank" rel="noopener noreferrer" className="gl-footer-link">
+            {linkTextDe}
+          </a>
+          {parts[1]}
+        </>
+      );
+    }
+    return fullText;
+  };
+
   if (loading || i18nLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-[#181818] text-slate-900 dark:text-[#e4e4e4]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-orange-500" />
-          <p className="text-sm text-slate-600 dark:text-slate-400">Loading settings...</p>
+          <Loader2 className="h-10 w-10 animate-spin text-[#1f75cb]" />
+          <p className="text-sm text-slate-600 dark:text-slate-400">{t('options.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="max-w-xl mx-auto bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl dark:shadow-2xl overflow-hidden">
-        {/* Header Banner */}
-        <div className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-8 relative">
-          <div className="flex items-center space-x-3">
-            <div className="bg-slate-200 dark:bg-slate-700 p-2 rounded-lg">
-              <Settings className="h-7 w-7 text-slate-700 dark:text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white m-0">{t('options.title')}</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{t('options.subtitle')}</p>
-            </div>
-          </div>
+    <div className={`settings-page-wrapper ${theme}`}>
+      {/* Redesigned Header Row */}
+      <div className="w-full max-w-[960px] flex justify-between items-center mb-6">
+        <h1 className="gl-heading mb-0">
+          {t('options.integrationSettings') || 'GitLab Integration Settings'}
+        </h1>
+        <button
+          type="button"
+          onClick={handleToggleTheme}
+          className="theme-toggle-btn"
+          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+      </div>
+
+      <form onSubmit={handleSave} className="gl-card">
+        {/* Card Header */}
+        <div className="gl-card-header">
+          <h2 className="gl-card-title">{t('options.title')}</h2>
+          <p className="gl-card-subtitle">{t('options.subtitle')}</p>
         </div>
 
-        {/* Content Form */}
-        <form onSubmit={handleSave} className="p-6 space-y-6">
-          
+        {/* Card Body */}
+        <div className="gl-card-body">
           {/* Custom GitLab Domain */}
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
-              <Globe className="h-4 w-4 mr-2 text-indigo-400" />
+          <div className="gl-form-group">
+            <label className="gl-label" htmlFor="customDomain">
               {t('options.customDomain')}
             </label>
             <input
               type="url"
+              id="customDomain"
               value={customDomain}
               onChange={(e) => setCustomDomain(e.target.value)}
               placeholder={t('options.customDomainPlaceholder')}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
+              className="gl-input"
             />
-            <p className="text-xs text-slate-500">
+            <p className="gl-help-text">
               {t('options.customDomainHelp')}
             </p>
           </div>
 
           {/* Repo URL */}
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
-              <FolderGit2 className="h-4 w-4 mr-2 text-indigo-400" />
-              {t('options.repoUrl')} <span className="text-pink-500">*</span>
+          <div className="gl-form-group">
+            <label className="gl-label" htmlFor="repoUrl">
+              {t('options.repoUrl')} <span className="gl-label-required">*</span>
             </label>
             <input
               type="url"
+              id="repoUrl"
               required
               value={repoUrl}
               onChange={(e) => setRepoUrl(e.target.value)}
               placeholder={t('options.repoUrlPlaceholder')}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
+              className="gl-input"
             />
-            <p className="text-xs text-slate-500">
+            <p className="gl-help-text">
               {t('options.repoUrlHelp')}
             </p>
           </div>
 
           {/* PAT Token */}
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
-              <KeyRound className="h-4 w-4 mr-2 text-indigo-400" />
+          <div className="gl-form-group">
+            <label className="gl-label" htmlFor="pat">
               {t('options.pat')}
             </label>
             <input
               type="password"
+              id="pat"
               value={pat}
               onChange={(e) => setPat(e.target.value)}
               placeholder={t('options.patPlaceholder')}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all duration-200"
+              className="gl-input"
             />
-            <p className="text-xs text-slate-500">
+            <p className="gl-help-text">
               {t('options.patHelp')}
             </p>
           </div>
 
           {/* Language Selector */}
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
-              <Languages className="h-4 w-4 mr-2 text-indigo-400" />
+          <div className="gl-form-group">
+            <label className="gl-label" htmlFor="language">
               {t('options.language')}
             </label>
             <div className="relative">
               <select
+                id="language"
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as LanguageCode)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-4 py-3 pr-10 text-sm text-slate-900 dark:text-slate-200 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 appearance-none transition-all duration-200 cursor-pointer"
+                className="gl-input pr-10 appearance-none cursor-pointer"
               >
                 {Object.entries(languageNames).map(([code, name]) => (
-                  <option key={code} value={code}>
+                  <option key={code} value={code} className="bg-[var(--gl-input-bg)] text-[var(--gl-text-primary)]">
                     {name}
                   </option>
                 ))}
               </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500">
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--gl-text-secondary)]">
                 <ChevronDown className="h-4 w-4" />
               </div>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="gl-help-text">
               {t('options.languageHelp')}
             </p>
           </div>
 
-          {/* Advanced Options Toggle */}
-          <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!showAdvanced)}
-              className="w-full flex items-center justify-between py-2 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-200 cursor-pointer"
+          {/* Advanced Options collapsible details */}
+          <div className="gl-details">
+            <div 
+              onClick={() => setShowAdvanced(!showAdvanced)} 
+              className="gl-summary"
             >
-              <span>{t('options.advancedOptions')}</span>
-              {showAdvanced ? (
-                <ChevronUp className="h-4 w-4 text-slate-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-500" />
-              )}
-            </button>
+              <ChevronDown 
+                className="h-4 w-4 gl-summary-icon" 
+                style={{ transform: showAdvanced ? 'none' : 'rotate(-90deg)' }} 
+              />
+              {t('options.advancedOptions')}
+            </div>
             
             {showAdvanced && (
-              <div className="space-y-4 pt-3 mt-1 animate-fade-in">
+              <div className="mt-4 space-y-5">
                 {/* Template Insertion Behavior */}
-                <div className="space-y-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4">
-                  <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <div>
+                  <label className="gl-label">
                     {t('options.insertionBehavior')}
                   </label>
-                  <div className="flex flex-col sm:flex-row gap-4 pt-1">
-                    <label className="flex items-center space-x-3 cursor-pointer">
+                  <div className="gl-radio-group">
+                    <label className="gl-radio-container" htmlFor="overwrite">
                       <input
                         type="radio"
+                        id="overwrite"
                         name="shouldOverwrite"
                         checked={shouldOverwrite === true}
                         onChange={() => setShouldOverwrite(true)}
-                        className="h-4 w-4 text-orange-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-orange-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 focus:ring-2"
+                        className="gl-radio-input"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">{t('options.overwriteOption')}</span>
+                      <span className="gl-radio-label">{t('options.overwriteOption')}</span>
                     </label>
                     
-                    <label className="flex items-center space-x-3 cursor-pointer">
+                    <label className="gl-radio-container" htmlFor="append">
                       <input
                         type="radio"
+                        id="append"
                         name="shouldOverwrite"
                         checked={shouldOverwrite === false}
                         onChange={() => setShouldOverwrite(false)}
-                        className="h-4 w-4 text-orange-500 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-orange-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 focus:ring-2"
+                        className="gl-radio-input"
                       />
-                      <span className="text-sm text-slate-700 dark:text-slate-300">{t('options.appendOption')}</span>
+                      <span className="gl-radio-label">{t('options.appendOption')}</span>
                     </label>
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="gl-help-text">
                     {t('options.insertionBehaviorHelp')}
                   </p>
                 </div>
 
                 {/* Developer Settings */}
-                <div className="space-y-3 bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4">
-                  <label className="flex items-center text-sm font-semibold text-slate-700 dark:text-slate-300">
+                <div className="pt-4 border-t border-[var(--gl-border-color)]">
+                  <label className="gl-label">
                     {t('options.developerSettings')}
                   </label>
-                  <div className="flex items-center space-x-3 cursor-pointer pt-1">
+                  <label className="gl-checkbox-container" htmlFor="enableLogging">
                     <input
                       type="checkbox"
                       id="enableLogging"
                       checked={enableLogging}
                       onChange={(e) => setEnableLogging(e.target.checked)}
-                      className="h-4 w-4 text-orange-500 rounded border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:ring-orange-500 focus:ring-offset-white dark:focus:ring-offset-slate-900 focus:ring-2"
+                      className="gl-checkbox-input"
                     />
-                    <label htmlFor="enableLogging" className="text-sm text-slate-700 dark:text-slate-300 cursor-pointer select-none">
+                    <span className="gl-checkbox-label">
                       {t('options.enableLogging')}
-                    </label>
-                  </div>
-                  <p className="text-xs text-slate-500 mt-1">
+                    </span>
+                  </label>
+                  <p className="gl-help-text">
                     {t('options.enableLoggingHelp')}
                   </p>
                 </div>
@@ -406,88 +464,94 @@ export default function OptionsApp() {
             )}
           </div>
 
-          {/* Alert messages */}
-          {successMsg && (
-            <div className="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-xl p-4 text-emerald-700 dark:text-emerald-400 text-sm animate-fade-in">
-              <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-              <span>{successMsg}</span>
-            </div>
-          )}
-
-          {errorMsg && (
-            <div className="flex items-center gap-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl p-4 text-rose-700 dark:text-rose-400 text-sm animate-fade-in">
-              <AlertCircle className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {testStatus && (
-            <div className={`flex items-start gap-3 border rounded-xl p-4 text-sm animate-fade-in ${
-              testStatus.success 
-                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400' 
-                : 'bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/40 text-rose-700 dark:text-rose-400'
-            }`}>
-              {testStatus.success ? (
-                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400 mt-0.5" />
-              ) : (
-                <AlertCircle className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
-              )}
-              <div className="flex-1">
-                <p className="font-semibold">{testStatus.success ? t('options.messages.successTitle') : t('options.messages.errorTitle')}</p>
-                <p className="text-xs mt-1 opacity-90">{testStatus.message}</p>
+          {/* Success / Error Alerts */}
+          <div className="mt-5 space-y-3">
+            {successMsg && (
+              <div className="gl-alert gl-alert-success animate-fade-in">
+                <CheckCircle2 className="h-5 w-5 gl-alert-icon" />
+                <div>
+                  <p className="gl-alert-title">{t('options.messages.successTitle')}</p>
+                  <p>{successMsg}</p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Action Buttons */}
-          <div className="pt-4 flex flex-col sm:flex-row gap-3">
-            <button
-              type="submit"
-              disabled={saving || testing}
-              className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-medium rounded-xl py-3 px-4 flex items-center justify-center cursor-pointer shadow-lg shadow-orange-600/10 hover:shadow-orange-600/20 transition-all duration-200"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {t('options.saving')}
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  {t('options.saveSettings')}
-                </>
-              )}
-            </button>
+            {errorMsg && (
+              <div className="gl-alert gl-alert-error animate-fade-in">
+                <AlertCircle className="h-5 w-5 gl-alert-icon" />
+                <div>
+                  <p className="gl-alert-title">{t('options.messages.errorTitle')}</p>
+                  <p>{errorMsg}</p>
+                </div>
+              </div>
+            )}
 
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={saving || testing}
-              className="sm:w-auto bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-200 font-medium rounded-xl py-3 px-5 flex items-center justify-center cursor-pointer border border-slate-300 dark:border-slate-700 transition-all duration-200"
-            >
-              {testing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  {t('options.testing')}
-                </>
-              ) : (
-                <>
-                  <Play className="h-4 w-4 mr-2 text-orange-400" />
-                  {t('options.testConnection')}
-                </>
-              )}
-            </button>
+            {testStatus && (
+              <div className={`gl-alert ${testStatus.success ? 'gl-alert-success' : 'gl-alert-error'} animate-fade-in`}>
+                {testStatus.success ? (
+                  <CheckCircle2 className="h-5 w-5 gl-alert-icon" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 gl-alert-icon" />
+                )}
+                <div>
+                  <p className="gl-alert-title">
+                    {testStatus.success ? t('options.messages.successTitle') : t('options.messages.errorTitle')}
+                  </p>
+                  <p>{testStatus.message}</p>
+                </div>
+              </div>
+            )}
           </div>
-        </form>
-
-        {/* Footer Info */}
-        <div className="bg-slate-100 dark:bg-slate-950 px-6 py-4 border-t border-slate-200 dark:border-slate-900/60 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center">
-            <HelpCircle className="h-3.5 w-3.5 mr-1 text-slate-600" />
-            <span>{t('options.needHelp')}</span>
-          </div>
-          <span>v1.0.0</span>
         </div>
+
+        {/* Card Footer */}
+        <div className="gl-card-footer justify-end">
+          <button
+            type="submit"
+            disabled={saving || testing}
+            className="gl-btn gl-btn-primary"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                {t('options.saving')}
+              </>
+            ) : (
+              t('options.saveChanges')
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleTestConnection}
+            disabled={saving || testing}
+            className="gl-btn gl-btn-secondary"
+          >
+            {testing ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                {t('options.testing')}
+              </>
+            ) : (
+              t('options.testConnection')
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* Footer Info / Help */}
+      <div className="gl-footer-info">
+        {renderHelpText()}
+        {" · "}
+        <a 
+          href="https://github.com/joeperpetua/GitLabSharedTemplates" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="gl-footer-link"
+        >
+          {t('options.issuesAndDocs') || 'Issues & Docs'}
+        </a>
+        {` · v${chrome?.runtime?.getManifest?.()?.version || '1.0.0'}`}
       </div>
     </div>
   );
