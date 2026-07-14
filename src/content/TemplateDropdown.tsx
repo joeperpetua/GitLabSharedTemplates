@@ -286,6 +286,33 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 			.includes(searchQuery.toLowerCase()),
 	);
 
+	const getCurrentViewType = (): "issue" | "merge_request" | "other" => {
+		const href = window.location.href.toLowerCase();
+		if (href.includes("/merge_requests") || href.includes("/merge-requests")) {
+			return "merge_request";
+		}
+		if (href.includes("/issues")) {
+			return "issue";
+		}
+
+		if (textarea) {
+			const id = (textarea.id || "").toLowerCase();
+			const name = (textarea.name || "").toLowerCase();
+			if (
+				id.includes("merge-request") ||
+				id.includes("mergerequest") ||
+				name.includes("merge_request")
+			) {
+				return "merge_request";
+			}
+			if (id.includes("issue") || name.includes("issue")) {
+				return "issue";
+			}
+		}
+
+		return "other";
+	};
+
 	const getGroupedTemplates = () => {
 		const groups: {
 			issueTemplates: TemplateFile[];
@@ -447,39 +474,43 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 						) : (
 							(() => {
 								const groups = getGroupedTemplates();
+								const viewType = getCurrentViewType();
+
+								// Determine render order based on current view
+								const renderOrder: Array<{
+									title: string;
+									templates: TemplateFile[];
+								}> = [];
+
+								if (viewType === "merge_request") {
+									renderOrder.push(
+										{ title: t("dropdown.mergeRequestTemplates"), templates: groups.mergeRequestTemplates },
+										{ title: t("dropdown.issueTemplates"), templates: groups.issueTemplates },
+										{ title: t("dropdown.otherTemplates"), templates: groups.otherTemplates },
+									);
+								} else {
+									// Default: issue templates first
+									renderOrder.push(
+										{ title: t("dropdown.issueTemplates"), templates: groups.issueTemplates },
+										{ title: t("dropdown.mergeRequestTemplates"), templates: groups.mergeRequestTemplates },
+										{ title: t("dropdown.otherTemplates"), templates: groups.otherTemplates },
+									);
+								}
+
 								const renderedGroups: React.ReactNode[] = [];
 								let hasAnyContentBefore = false;
 
-								if (groups.issueTemplates.length > 0) {
-									renderedGroups.push(
-										renderTemplateGroup(
-											t("dropdown.issueTemplates"),
-											groups.issueTemplates,
-											hasAnyContentBefore,
-										),
-									);
-									hasAnyContentBefore = true;
-								}
-
-								if (groups.mergeRequestTemplates.length > 0) {
-									renderedGroups.push(
-										renderTemplateGroup(
-											t("dropdown.mergeRequestTemplates"),
-											groups.mergeRequestTemplates,
-											hasAnyContentBefore,
-										),
-									);
-									hasAnyContentBefore = true;
-								}
-
-								if (groups.otherTemplates.length > 0) {
-									renderedGroups.push(
-										renderTemplateGroup(
-											t("dropdown.otherTemplates"),
-											groups.otherTemplates,
-											hasAnyContentBefore,
-										),
-									);
+								for (const group of renderOrder) {
+									if (group.templates.length > 0) {
+										renderedGroups.push(
+											renderTemplateGroup(
+												group.title,
+												group.templates,
+												hasAnyContentBefore,
+											),
+										);
+										hasAnyContentBefore = true;
+									}
 								}
 
 								return renderedGroups;
@@ -488,7 +519,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 					</div>
 
 					<div className="gl-template-menu-divider"></div>
-					<div className="gl-border-t gl-border-t-dropdown gl-p-2 gl-pt-0">
+					<div className="gl-p-2 gl-pt-0">
 						<button
 							className="gl-mt-2 !gl-justify-start btn gl-button btn-default btn-md btn-block btn-default-tertiary"
 							onClick={handleNoTemplate}
