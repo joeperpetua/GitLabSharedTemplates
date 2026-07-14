@@ -43,6 +43,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const initialTextRef = useRef<string>("");
+	const hasSavedInitialRef = useRef(false);
 
 	const fetchTemplates = () => {
 		setLoading(true);
@@ -71,9 +72,10 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 	useEffect(() => {
 		fetchTemplates();
 
-		// Save initial description content for Reset Template functionality
-		if (textarea) {
+		// Save initial description content if it's already populated on mount
+		if (textarea && textarea.value) {
 			initialTextRef.current = textarea.value;
+			hasSavedInitialRef.current = true;
 		}
 
 		const handleStorageChange = (
@@ -151,18 +153,24 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 		textarea.value = "";
 		setSelectedPath("");
 		setIsOpen(false);
+		hasSavedInitialRef.current = false;
 		textarea.dispatchEvent(new Event("input", { bubbles: true }));
 		textarea.dispatchEvent(new Event("change", { bubbles: true }));
 	};
 
 	const handleResetTemplate = () => {
 		if (!textarea) return;
-		textarea.focus();
-		textarea.value = initialTextRef.current;
-		setSelectedPath("");
-		setIsOpen(false);
-		textarea.dispatchEvent(new Event("input", { bubbles: true }));
-		textarea.dispatchEvent(new Event("change", { bubbles: true }));
+		if (selectedPath) {
+			handleSelectTemplate(selectedPath);
+		} else {
+			textarea.focus();
+			textarea.value = initialTextRef.current;
+			setSelectedPath("");
+			setIsOpen(false);
+			hasSavedInitialRef.current = false;
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+			textarea.dispatchEvent(new Event("change", { bubbles: true }));
+		}
 	};
 
 	const handleOpenSettings = () => {
@@ -172,6 +180,12 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 
 	const insertContent = (content: string) => {
 		if (!textarea) return;
+
+		// Save the initial content before the first template insertion
+		if (!hasSavedInitialRef.current) {
+			initialTextRef.current = textarea.value;
+			hasSavedInitialRef.current = true;
+		}
 
 		chrome.storage.sync.get({ shouldOverwrite: true }, (items) => {
 			const overwrite = items.shouldOverwrite ?? true;
