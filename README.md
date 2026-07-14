@@ -1,101 +1,108 @@
-# GitLab Shared Templates Extension (Manifest V3)
+# GitLab Shared Templates
 
-A modern, premium Cross-Browser extension (Chrome & Firefox) that integrates custom Markdown templates from any GitLab repository (public or private) directly into GitLab Issues and Merge Requests. Built using React, TypeScript, Vite, and Tailwind CSS v4.
+Easily manage and insert custom Markdown templates from a shared GitLab repository directly into GitLab Issues, Merge Requests, and Work Items. 
 
----
+> [!NOTE]
+> **Why use this?** In GitLab, sharing description templates across multiple projects/groups natively [requires a Premium or Ultimate subscription](https://docs.gitlab.com/user/group/custom_project_templates/). Free GitLab tiers are restricted to project-scoped templates only. This extension bypasses that limitation by allowing you to host all team templates in a single, central repository and load them dynamically across all of your projects.
 
-## 🚀 Key Features
-
-* **Vibrant & Modern UI Settings**: Styled with a dark mode theme, orange/pink gradients, and dynamic visual indicators.
-* **CORS-Free Backend Worker**: Background service worker routes GitLab REST API requests to circumvent CORS limitations.
-* **Smart GitLab URL Parsing**: Handles different URL configurations (e.g. self-hosted GitLab domains, subgroups, `.git` suffixes, branch/file subpages).
-* **Live Connection Test**: Allows users to test connection credentials immediately in Options and see exactly how many templates were found before saving.
-* **Dynamic Content Script Injection**: Uses dynamic host permissions (`chrome.permissions`) and scripting API (`chrome.scripting.registerContentScripts`) to support self-hosted GitLab domains without requiring global `<all_urls>` permissions.
-* **Cursor-Targeted Insertion**: Appends the template at the exact cursor position inside the textarea, and automatically handles whitespace padding.
-* **SPA/Turbo Navigation Support**: Uses a robust DOM `MutationObserver` to ensure the dropdown is injected on page updates without a hard reload.
-* **Automatic Live Updates**: Listens to storage changes to reload the template lists instantly on existing tabs when you update settings.
+This browser extension is fully compatible with **Google Chrome** (and other Chromium browsers like Edge, Brave, and Opera) and **Mozilla Firefox**.
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Features
 
-1. **Framework**: Vite + `@crxjs/vite-plugin` for Manifest V3 extension packaging.
-2. **UI/Components**: React 19 + Lucide Icons.
-3. **Styling**: Tailwind CSS v4 (with zero-preflight scoping for content scripts to prevent host-site layout distortion).
-4. **Languages**: TypeScript + ES2023.
-
----
-
-## 📂 Project Architecture
-
-```
-GLSharedTemplates/
-├── dist/                      # Packaged extension output (unpacked)
-├── src/
-│   ├── background/
-│   │   └── index.ts          # Service worker for API requests and dynamic scripts
-│   ├── content/
-│   │   └── index.tsx         # Mutation observer & DOM injector for dropdowns
-│   ├── options/
-│   │   ├── index.tsx         # Settings mounting point
-│   │   └── OptionsApp.tsx    # Settings Form, permission requests, connection test UI
-│   ├── utils/
-│   │   └── gitlab.ts         # URL parsing and domain normalization utility functions
-│   ├── index.css             # Tailwind v4 import stylesheet
-│   └── vite-env.d.ts
-├── index.html                 # Standard index page
-├── options.html               # Settings entrypoint
-├── manifest.json              # Extension schema (Manifest V3)
-├── package.json               # Node packages and build scripts
-├── tsconfig.json              # TypeScript root configuration
-├── tsconfig.app.json          # TypeScript app config with Chrome types
-└── vite.config.ts             # Vite configuration with tailwindcss() & crx()
-```
+* **Centralized Team Templates:** Store all your team's Markdown templates (`.md` files) in a single GitLab repository. Changes are updated instantly for everyone using the extension.
+* **Seamless UI Integration:** Inserts a clean, native-feeling template dropdown right next to GitLab's default description template selector.
+* **Self-Hosted GitLab Support:** Works out of the box with standard `gitlab.com` as well as custom enterprise GitLab domains (e.g. `gitlab.company.com`).
+* **Secure and Private:** Your configurations and GitLab Personal Access Tokens are stored securely in your browser's local storage and are never sent to third-party servers.
 
 ---
 
-## 📦 How to Build and Package
+## 🚀 How It Works
 
-### 1. Install Dependencies
-Run the command below in the project directory:
+1. **Create your Template Repository:** Store your standard Markdown templates as `.md` files inside any GitLab repository (can be public or private).
+2. **Install the Extension:** Download the extension from the official stores or build it from source.
+3. **Configure Settings:** Click the extension icon to open the options page:
+   * Paste your **Templates Repository URL**.
+   * **Personal Access Token (PAT):** Only required if the templates repository is private **and** you do not have an active login session open in the current browser for that GitLab instance. If you are already logged in to GitLab on the same browser, the background requests use your active browser session automatically, and a PAT is not needed.
+   * If your company uses a self-hosted GitLab instance, fill in the **Custom GitLab Domain** field.
+4. **Use Your Templates:** Go to any New Issue, New Merge Request, or Work Item page on GitLab. Select a template from the new dropdown, and it will insert instantly.
+
+---
+
+## 🔌 Installation
+
+### Official Extension Stores
+The extension is available for direct installation in the browser stores:
+* **Chrome Web Store** (for Google Chrome, Microsoft Edge, Brave, Opera, etc.)
+* **Firefox Add-ons (AMO)** (for Mozilla Firefox)
+
+### Installing from Source / Developer Mode (Local Setup)
+If you prefer to build the extension manually or install it locally for development, follow these steps:
+
+#### Google Chrome, Microsoft Edge, Brave, or Opera:
+1. Download or clone this repository.
+2. Build the project using Node (see [Development](#-development) below) to generate the `dist` folder.
+3. Open your browser and go to `chrome://extensions` (or `edge://extensions`).
+4. Enable **Developer mode** (top-right toggle).
+5. Click **Load unpacked** and select the **`dist`** directory.
+
+#### Mozilla Firefox:
+1. Download or clone this repository.
+2. Build the project using Node (see [Development](#-development) below) to generate the `dist-firefox` folder.
+3. Open Firefox and go to `about:debugging`.
+4. Click **This Firefox** on the left menu.
+5. Click **Load Temporary Add-on...** and select `manifest.json` inside the **`dist-firefox`** folder.
+
+---
+
+## 🛠️ Development
+
+This extension is built using React, TypeScript, and Vite.
+
+### Getting Started:
 ```bash
+# 1. Install dependencies
 pnpm install
+
+# 2. Run developer environment
+pnpm dev
+
+# 3. Compile the production extension builds
+pnpm build
 ```
 
-### 2. Compile for Production
-Compile the project to generate the production build in the `dist/` directory:
+### Packaging:
+To generate production-ready ZIP packages for Chrome and Firefox, run the packaging utility:
 ```bash
-pnpm run build
+node packExtension.js
 ```
+By default, this will automatically bump the patch version, compile the builds, and output compliant ZIP archives in the `build/` folder.
+
+You can customize this behavior using CLI flags:
+* **No Bump:** Keep the current version from `manifest.json` without incrementing it:
+  ```bash
+  node packExtension.js -n
+  ```
+* **Custom Bump Step:** Increment a specific semver segment (`patch`, `minor`, `major`):
+  ```bash
+  node packExtension.js -b minor
+  ```
+* **Specific Version:** Force a specific version override (e.g. `2.0.0`):
+  ```bash
+  node packExtension.js -v 2.0.0
+  ```
 
 ---
 
-## 🔌 How to Load the Extension in Your Browser
+## 🤝 Contributing
 
-### For Google Chrome, Microsoft Edge, or Brave:
-1. Open the browser and go to `chrome://extensions` (or `edge://extensions` in Edge).
-2. Toggle **Developer mode** on in the top-right corner.
-3. Click **Load unpacked** in the top-left corner.
-4. Select the **`dist`** directory inside the `GLSharedTemplates` folder.
-5. The extension is now loaded! Click the extension icon in your browser toolbar to open the settings.
+Contributions are highly welcome! We appreciate help in making this extension better for everyone.
 
-### For Mozilla Firefox:
-1. Open Firefox and enter `about:debugging` in the address bar.
-2. Click **This Firefox** on the left menu.
-3. Click **Load Temporary Add-on...** under Temporary Extensions.
-4. Navigate to the **`dist`** folder and select `manifest.json`.
-5. The extension will remain loaded until you restart Firefox.
+You can contribute in several ways:
+* **Bug Fixes:** Open an issue or submit a pull request if you find something that isn't working correctly.
+* **New Features:** Share your ideas or implement new features to improve the template selection workflow.
+* **Translation & Localization:** Help translate the extension UI and settings page into more languages.
+* **Documentation:** Improve this README, add guides, or improve code comments.
 
----
-
-## ⚙️ How to Configure Settings
-
-Click the extension icon in your toolbar to open the **Options Page**.
-
-1. **Custom GitLab Domain**: (Optional) Enter your company's self-hosted GitLab instance URL (e.g. `https://gitlab.mycompany.com`). If left blank, it defaults to `https://gitlab.com`.
-2. **Templates Repository URL**: Paste the full GitLab project URL where your `.md` template files are stored (e.g. `https://gitlab.com/john_doe/my-markdown-templates`).
-3. **Personal Access Token (PAT)**: (Optional) If your templates repository is private, create a GitLab Personal Access Token with the `read_api` scope and paste it here.
-4. **Test Connection**: Click this button to run a connection test. The extension will contact the GitLab API and return the number of templates found or a descriptive error.
-5. **Save Settings**: Click to store settings. If you entered a custom domain, the browser will prompt you to grant the required host permissions for that domain.
-
-Once configured, go to any GitLab issue (`/issues/new` or `/issues/1`) or merge request (`/merge_requests/new` or `/merge_requests/1`), and you will see a dropdown selector in the description area. Select any markdown file, and it will be inserted directly at your cursor position!
+Feel free to fork the repository, make your changes, and submit a pull request!
