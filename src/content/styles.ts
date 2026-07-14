@@ -32,7 +32,7 @@ export const injectStyles = () => {
     /* Dark Mode (when html or body has .gl-dark or .dark, or dark mode preferred) */
     @media (prefers-color-scheme: dark) {
       :root {
-        --gl-template-bg: #1e1e24;
+        --gl-template-bg: #28272d;
         --gl-template-border: #2d2e36;
         --gl-template-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
         --gl-template-text-primary: #ffffff;
@@ -45,7 +45,7 @@ export const injectStyles = () => {
         --gl-template-option-selected-bg: rgba(56, 148, 255, 0.12);
         --gl-template-option-selected-border: #3894ff;
         --gl-template-option-selected-text: #ffffff;
-        --gl-template-badge-bg: #1e1e24;
+        --gl-template-badge-bg: #28272d;
         --gl-template-badge-border: #2d2e36;
         --gl-template-badge-text: #89929b;
         --gl-template-error-bg: rgba(255, 107, 107, 0.08);
@@ -55,7 +55,7 @@ export const injectStyles = () => {
     }
 
     html.gl-dark, body.gl-dark, html.dark, body.dark, [data-theme="dark"] {
-      --gl-template-bg: #1e1e24;
+      --gl-template-bg: #28272d;
       --gl-template-border: #2d2e36;
       --gl-template-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
       --gl-template-text-primary: #ffffff;
@@ -68,7 +68,7 @@ export const injectStyles = () => {
       --gl-template-option-selected-bg: rgba(56, 148, 255, 0.12);
       --gl-template-option-selected-border: #3894ff;
       --gl-template-option-selected-text: #ffffff;
-      --gl-template-badge-bg: #1e1e24;
+      --gl-template-badge-bg: #28272d;
       --gl-template-badge-border: #2d2e36;
       --gl-template-badge-text: #89929b;
       --gl-template-error-bg: rgba(255, 107, 107, 0.08);
@@ -206,6 +206,18 @@ export const injectStyles = () => {
       max-height: 180px;
       overflow-y: auto;
       padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gl-template-border) transparent;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar-thumb {
+      background-color: var(--gl-template-border);
+      border-radius: 4px;
     }
     
     /* Option item */
@@ -256,6 +268,22 @@ export const injectStyles = () => {
       height: 1px;
       background-color: var(--gl-template-border);
       margin: 4px 0;
+    }
+    
+    .gl-template-category-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--gl-template-text-secondary);
+      padding: 8px 10px 4px;
+      text-align: left;
+      letter-spacing: 0.04em;
+    }
+    
+    .gl-template-category-separator {
+      height: 1px;
+      background-color: var(--gl-template-border);
+      margin: 6px 10px;
     }
     
     .gl-template-footer-btn {

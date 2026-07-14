@@ -77,11 +77,11 @@ export default function OptionsApp() {
   useEffect(() => {
     const body = document.body;
     if (theme === 'dark') {
-      body.classList.remove('bg-white', 'text-slate-900');
-      body.classList.add('bg-[#181818]', 'text-slate-100');
+      body.classList.remove('bg-white', 'bg-[#f3f3f6]', 'text-slate-900');
+      body.classList.add('bg-[#18171d]', 'text-[#dbdbde]');
     } else {
-      body.classList.remove('bg-slate-900', 'bg-[#181818]', 'text-slate-100');
-      body.classList.add('bg-white', 'text-slate-900');
+      body.classList.remove('bg-slate-900', 'bg-[#18171d]', 'text-slate-100', 'text-[#dbdbde]');
+      body.classList.add('bg-[#f3f3f6]', 'text-[#1f1f1f]');
     }
   }, [theme]);
 
@@ -272,9 +272,9 @@ export default function OptionsApp() {
 
   if (loading || i18nLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-slate-50 dark:bg-[#181818] text-slate-900 dark:text-[#e4e4e4]">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#f3f3f6] dark:bg-[#18171d] text-[#1f1f1f] dark:text-[#dbdbde]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-[#1f75cb]" />
+          <Loader2 className="h-10 w-10 animate-spin text-[#1068bf] dark:text-[#3894ff]" />
           <p className="text-sm text-slate-600 dark:text-slate-400">{t('options.loading')}</p>
         </div>
       </div>
@@ -283,9 +283,9 @@ export default function OptionsApp() {
 
   return (
     <div className={`settings-page-wrapper ${theme}`}>
-      {/* Redesigned Header Row */}
-      <div className="w-full max-w-[960px] flex justify-between items-center mb-6">
-        <h1 className="gl-heading mb-0">
+      {/* Redesigned Header Row matching GitLab Page Header with Divider */}
+      <div className="w-full max-w-[960px] flex justify-between items-center pb-4 mb-6 border-b border-[var(--gl-border-color)]">
+        <h1 className="gl-heading">
           {t('options.integrationSettings') || 'GitLab Integration Settings'}
         </h1>
         <button
@@ -298,246 +298,250 @@ export default function OptionsApp() {
         </button>
       </div>
 
-      <form onSubmit={handleSave} className="gl-card">
-        {/* Card Header */}
-        <div className="gl-card-header">
-          <h2 className="gl-card-title">{t('options.title')}</h2>
-          <p className="gl-card-subtitle">{t('options.subtitle')}</p>
+      {/* Two Column Settings Section Layout */}
+      <div className="w-full max-w-[960px] flex flex-col md:flex-row gap-6 md:gap-10">
+        {/* Left Column: Title and Subtitle */}
+        <div className="w-full md:w-1/3">
+          <h2 className="gl-section-title">{t('options.title')}</h2>
+          <p className="gl-section-subtitle">{t('options.subtitle')}</p>
         </div>
 
-        {/* Card Body */}
-        <div className="gl-card-body">
-          {/* Custom GitLab Domain */}
-          <div className="gl-form-group">
-            <label className="gl-label" htmlFor="customDomain">
-              {t('options.customDomain')}
-            </label>
-            <input
-              type="url"
-              id="customDomain"
-              value={customDomain}
-              onChange={(e) => setCustomDomain(e.target.value)}
-              placeholder={t('options.customDomainPlaceholder')}
-              className="gl-input"
-            />
-            <p className="gl-help-text">
-              {t('options.customDomainHelp')}
-            </p>
-          </div>
-
-          {/* Repo URL */}
-          <div className="gl-form-group">
-            <label className="gl-label" htmlFor="repoUrl">
-              {t('options.repoUrl')} <span className="gl-label-required">*</span>
-            </label>
-            <input
-              type="url"
-              id="repoUrl"
-              required
-              value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
-              placeholder={t('options.repoUrlPlaceholder')}
-              className="gl-input"
-            />
-            <p className="gl-help-text">
-              {t('options.repoUrlHelp')}
-            </p>
-          </div>
-
-          {/* PAT Token */}
-          <div className="gl-form-group">
-            <label className="gl-label" htmlFor="pat">
-              {t('options.pat')}
-            </label>
-            <input
-              type="password"
-              id="pat"
-              value={pat}
-              onChange={(e) => setPat(e.target.value)}
-              placeholder={t('options.patPlaceholder')}
-              className="gl-input"
-            />
-            <p className="gl-help-text">
-              {t('options.patHelp')}
-            </p>
-          </div>
-
-          {/* Language Selector */}
-          <div className="gl-form-group">
-            <label className="gl-label" htmlFor="language">
-              {t('options.language')}
-            </label>
-            <div className="relative">
-              <select
-                id="language"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value as LanguageCode)}
-                className="gl-input pr-10 appearance-none cursor-pointer"
-              >
-                {Object.entries(languageNames).map(([code, name]) => (
-                  <option key={code} value={code} className="bg-[var(--gl-input-bg)] text-[var(--gl-text-primary)]">
-                    {name}
-                  </option>
-                ))}
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--gl-text-secondary)]">
-                <ChevronDown className="h-4 w-4" />
-              </div>
-            </div>
-            <p className="gl-help-text">
-              {t('options.languageHelp')}
-            </p>
-          </div>
-
-          {/* Advanced Options collapsible details */}
-          <div className="gl-details">
-            <div 
-              onClick={() => setShowAdvanced(!showAdvanced)} 
-              className="gl-summary"
-            >
-              <ChevronDown 
-                className="h-4 w-4 gl-summary-icon" 
-                style={{ transform: showAdvanced ? 'none' : 'rotate(-90deg)' }} 
+        {/* Right Column: Card containing the settings form */}
+        <form onSubmit={handleSave} className="w-full md:w-2/3 gl-card">
+          {/* Card Body */}
+          <div className="gl-card-body">
+            {/* Custom GitLab Domain */}
+            <div className="gl-form-group">
+              <label className="gl-label" htmlFor="customDomain">
+                {t('options.customDomain')}
+              </label>
+              <input
+                type="url"
+                id="customDomain"
+                value={customDomain}
+                onChange={(e) => setCustomDomain(e.target.value)}
+                placeholder={t('options.customDomainPlaceholder')}
+                className="gl-input"
               />
-              {t('options.advancedOptions')}
+              <p className="gl-help-text">
+                {t('options.customDomainHelp')}
+              </p>
             </div>
-            
-            {showAdvanced && (
-              <div className="mt-4 space-y-5">
-                {/* Template Insertion Behavior */}
-                <div>
-                  <label className="gl-label">
-                    {t('options.insertionBehavior')}
-                  </label>
-                  <div className="gl-radio-group">
-                    <label className="gl-radio-container" htmlFor="overwrite">
-                      <input
-                        type="radio"
-                        id="overwrite"
-                        name="shouldOverwrite"
-                        checked={shouldOverwrite === true}
-                        onChange={() => setShouldOverwrite(true)}
-                        className="gl-radio-input"
-                      />
-                      <span className="gl-radio-label">{t('options.overwriteOption')}</span>
+
+            {/* Repo URL */}
+            <div className="gl-form-group">
+              <label className="gl-label" htmlFor="repoUrl">
+                {t('options.repoUrl')} <span className="gl-label-required">*</span>
+              </label>
+              <input
+                type="url"
+                id="repoUrl"
+                required
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder={t('options.repoUrlPlaceholder')}
+                className="gl-input"
+              />
+              <p className="gl-help-text">
+                {t('options.repoUrlHelp')}
+              </p>
+            </div>
+
+            {/* PAT Token */}
+            <div className="gl-form-group">
+              <label className="gl-label" htmlFor="pat">
+                {t('options.pat')}
+              </label>
+              <input
+                type="password"
+                id="pat"
+                value={pat}
+                onChange={(e) => setPat(e.target.value)}
+                placeholder={t('options.patPlaceholder')}
+                className="gl-input"
+              />
+              <p className="gl-help-text">
+                {t('options.patHelp')}
+              </p>
+            </div>
+
+            {/* Language Selector */}
+            <div className="gl-form-group">
+              <label className="gl-label" htmlFor="language">
+                {t('options.language')}
+              </label>
+              <div className="relative">
+                <select
+                  id="language"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value as LanguageCode)}
+                  className="gl-input pr-10 appearance-none cursor-pointer"
+                >
+                  {Object.entries(languageNames).map(([code, name]) => (
+                    <option key={code} value={code} className="bg-[var(--gl-input-bg)] text-[var(--gl-text-primary)]">
+                      {name}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--gl-text-secondary)]">
+                  <ChevronDown className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="gl-help-text">
+                {t('options.languageHelp')}
+              </p>
+            </div>
+
+            {/* Advanced Options collapsible details */}
+            <div className="gl-details">
+              <div 
+                onClick={() => setShowAdvanced(!showAdvanced)} 
+                className="gl-summary"
+              >
+                <ChevronDown 
+                  className="h-4 w-4 gl-summary-icon" 
+                  style={{ transform: showAdvanced ? 'none' : 'rotate(-90deg)' }} 
+                />
+                {t('options.advancedOptions')}
+              </div>
+              
+              {showAdvanced && (
+                <div className="mt-4 space-y-5">
+                  {/* Template Insertion Behavior */}
+                  <div>
+                    <label className="gl-label">
+                      {t('options.insertionBehavior')}
                     </label>
-                    
-                    <label className="gl-radio-container" htmlFor="append">
-                      <input
-                        type="radio"
-                        id="append"
-                        name="shouldOverwrite"
-                        checked={shouldOverwrite === false}
-                        onChange={() => setShouldOverwrite(false)}
-                        className="gl-radio-input"
-                      />
-                      <span className="gl-radio-label">{t('options.appendOption')}</span>
-                    </label>
+                    <div className="gl-radio-group">
+                      <label className="gl-radio-container" htmlFor="overwrite">
+                        <input
+                          type="radio"
+                          id="overwrite"
+                          name="shouldOverwrite"
+                          checked={shouldOverwrite === true}
+                          onChange={() => setShouldOverwrite(true)}
+                          className="gl-radio-input"
+                        />
+                        <span className="gl-radio-label">{t('options.overwriteOption')}</span>
+                      </label>
+                      
+                      <label className="gl-radio-container" htmlFor="append">
+                        <input
+                          type="radio"
+                          id="append"
+                          name="shouldOverwrite"
+                          checked={shouldOverwrite === false}
+                          onChange={() => setShouldOverwrite(false)}
+                          className="gl-radio-input"
+                        />
+                        <span className="gl-radio-label">{t('options.appendOption')}</span>
+                      </label>
+                    </div>
+                    <p className="gl-help-text">
+                      {t('options.insertionBehaviorHelp')}
+                    </p>
                   </div>
-                  <p className="gl-help-text">
-                    {t('options.insertionBehaviorHelp')}
-                  </p>
-                </div>
 
-                {/* Developer Settings */}
-                <div className="pt-4 border-t border-[var(--gl-border-color)]">
-                  <label className="gl-label">
-                    {t('options.developerSettings')}
-                  </label>
-                  <label className="gl-checkbox-container" htmlFor="enableLogging">
-                    <input
-                      type="checkbox"
-                      id="enableLogging"
-                      checked={enableLogging}
-                      onChange={(e) => setEnableLogging(e.target.checked)}
-                      className="gl-checkbox-input"
-                    />
-                    <span className="gl-checkbox-label">
-                      {t('options.enableLogging')}
-                    </span>
-                  </label>
-                  <p className="gl-help-text">
-                    {t('options.enableLoggingHelp')}
-                  </p>
+                  {/* Developer Settings */}
+                  <div className="pt-4 border-t border-[var(--gl-border-color)]">
+                    <label className="gl-label">
+                      {t('options.developerSettings')}
+                    </label>
+                    <label className="gl-checkbox-container" htmlFor="enableLogging">
+                      <input
+                        type="checkbox"
+                        id="enableLogging"
+                        checked={enableLogging}
+                        onChange={(e) => setEnableLogging(e.target.checked)}
+                        className="gl-checkbox-input"
+                      />
+                      <span className="gl-checkbox-label">
+                        {t('options.enableLogging')}
+                      </span>
+                    </label>
+                    <p className="gl-help-text">
+                      {t('options.enableLoggingHelp')}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          {/* Success / Error Alerts */}
-          <div className="mt-5 space-y-3">
-            {successMsg && (
-              <div className="gl-alert gl-alert-success animate-fade-in">
-                <CheckCircle2 className="h-5 w-5 gl-alert-icon" />
-                <div>
-                  <p className="gl-alert-title">{t('options.messages.successTitle')}</p>
-                  <p>{successMsg}</p>
-                </div>
-              </div>
-            )}
-
-            {errorMsg && (
-              <div className="gl-alert gl-alert-error animate-fade-in">
-                <AlertCircle className="h-5 w-5 gl-alert-icon" />
-                <div>
-                  <p className="gl-alert-title">{t('options.messages.errorTitle')}</p>
-                  <p>{errorMsg}</p>
-                </div>
-              </div>
-            )}
-
-            {testStatus && (
-              <div className={`gl-alert ${testStatus.success ? 'gl-alert-success' : 'gl-alert-error'} animate-fade-in`}>
-                {testStatus.success ? (
+            {/* Success / Error Alerts */}
+            <div className="mt-5 space-y-3">
+              {successMsg && (
+                <div className="gl-alert gl-alert-success animate-fade-in">
                   <CheckCircle2 className="h-5 w-5 gl-alert-icon" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 gl-alert-icon" />
-                )}
-                <div>
-                  <p className="gl-alert-title">
-                    {testStatus.success ? t('options.messages.successTitle') : t('options.messages.errorTitle')}
-                  </p>
-                  <p>{testStatus.message}</p>
+                  <div>
+                    <p className="gl-alert-title">{t('options.messages.successTitle')}</p>
+                    <p>{successMsg}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {errorMsg && (
+                <div className="gl-alert gl-alert-error animate-fade-in">
+                  <AlertCircle className="h-5 w-5 gl-alert-icon" />
+                  <div>
+                    <p className="gl-alert-title">{t('options.messages.errorTitle')}</p>
+                    <p>{errorMsg}</p>
+                  </div>
+                </div>
+              )}
+
+              {testStatus && (
+                <div className={`gl-alert ${testStatus.success ? 'gl-alert-success' : 'gl-alert-error'} animate-fade-in`}>
+                  {testStatus.success ? (
+                    <CheckCircle2 className="h-5 w-5 gl-alert-icon" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 gl-alert-icon" />
+                  )}
+                  <div>
+                    <p className="gl-alert-title">
+                      {testStatus.success ? t('options.messages.successTitle') : t('options.messages.errorTitle')}
+                    </p>
+                    <p>{testStatus.message}</p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Card Footer */}
-        <div className="gl-card-footer justify-end">
-          <button
-            type="submit"
-            disabled={saving || testing}
-            className="gl-btn gl-btn-primary"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {t('options.saving')}
-              </>
-            ) : (
-              t('options.saveChanges')
-            )}
-          </button>
+          {/* Card Footer with Buttons justified at the end and ordered correctly */}
+          <div className="gl-card-footer justify-end">
+            <button
+              type="button"
+              onClick={handleTestConnection}
+              disabled={saving || testing}
+              className="gl-btn gl-btn-secondary"
+            >
+              {testing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t('options.testing')}
+                </>
+              ) : (
+                t('options.testConnection')
+              )}
+            </button>
 
-          <button
-            type="button"
-            onClick={handleTestConnection}
-            disabled={saving || testing}
-            className="gl-btn gl-btn-secondary"
-          >
-            {testing ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                {t('options.testing')}
-              </>
-            ) : (
-              t('options.testConnection')
-            )}
-          </button>
-        </div>
-      </form>
+            <button
+              type="submit"
+              disabled={saving || testing}
+              className="gl-btn gl-btn-primary"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {t('options.saving')}
+                </>
+              ) : (
+                t('options.saveChanges')
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Footer Info / Help */}
       <div className="gl-footer-info">

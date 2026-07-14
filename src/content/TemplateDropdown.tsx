@@ -43,6 +43,7 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 
 	const dropdownRef = useRef<HTMLDivElement>(null);
 	const initialTextRef = useRef<string>("");
+	const hasSavedInitialRef = useRef(false);
 
 	const fetchTemplates = () => {
 		setLoading(true);
@@ -71,9 +72,10 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 	useEffect(() => {
 		fetchTemplates();
 
-		// Save initial description content for Reset Template functionality
-		if (textarea) {
+		// Save initial description content if it's already populated on mount
+		if (textarea && textarea.value) {
 			initialTextRef.current = textarea.value;
+			hasSavedInitialRef.current = true;
 		}
 
 		const handleStorageChange = (
@@ -151,18 +153,24 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 		textarea.value = "";
 		setSelectedPath("");
 		setIsOpen(false);
+		hasSavedInitialRef.current = false;
 		textarea.dispatchEvent(new Event("input", { bubbles: true }));
 		textarea.dispatchEvent(new Event("change", { bubbles: true }));
 	};
 
 	const handleResetTemplate = () => {
 		if (!textarea) return;
-		textarea.focus();
-		textarea.value = initialTextRef.current;
-		setSelectedPath("");
-		setIsOpen(false);
-		textarea.dispatchEvent(new Event("input", { bubbles: true }));
-		textarea.dispatchEvent(new Event("change", { bubbles: true }));
+		if (selectedPath) {
+			handleSelectTemplate(selectedPath);
+		} else {
+			textarea.focus();
+			textarea.value = initialTextRef.current;
+			setSelectedPath("");
+			setIsOpen(false);
+			hasSavedInitialRef.current = false;
+			textarea.dispatchEvent(new Event("input", { bubbles: true }));
+			textarea.dispatchEvent(new Event("change", { bubbles: true }));
+		}
 	};
 
 	const handleOpenSettings = () => {
@@ -172,6 +180,12 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 
 	const insertContent = (content: string) => {
 		if (!textarea) return;
+
+		// Save the initial content before the first template insertion
+		if (!hasSavedInitialRef.current) {
+			initialTextRef.current = textarea.value;
+			hasSavedInitialRef.current = true;
+		}
 
 		chrome.storage.sync.get({ shouldOverwrite: true }, (items) => {
 			const overwrite = items.shouldOverwrite ?? true;
@@ -272,6 +286,108 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 			.includes(searchQuery.toLowerCase()),
 	);
 
+	const getCurrentViewType = (): "issue" | "merge_request" | "other" => {
+		const href = window.location.href.toLowerCase();
+		if (href.includes("/merge_requests") || href.includes("/merge-requests")) {
+			return "merge_request";
+		}
+		if (href.includes("/issues")) {
+			return "issue";
+		}
+
+		if (textarea) {
+			const id = (textarea.id || "").toLowerCase();
+			const name = (textarea.name || "").toLowerCase();
+			if (
+				id.includes("merge-request") ||
+				id.includes("mergerequest") ||
+				name.includes("merge_request")
+			) {
+				return "merge_request";
+			}
+			if (id.includes("issue") || name.includes("issue")) {
+				return "issue";
+			}
+		}
+
+		return "other";
+	};
+
+	const getGroupedTemplates = () => {
+		const groups: {
+			issueTemplates: TemplateFile[];
+			mergeRequestTemplates: TemplateFile[];
+			otherTemplates: TemplateFile[];
+		} = {
+			issueTemplates: [],
+			mergeRequestTemplates: [],
+			otherTemplates: [],
+		};
+
+		for (const template of filteredTemplates) {
+			const parts = template.path.split("/");
+			let groupKey: "issueTemplates" | "mergeRequestTemplates" | "otherTemplates" = "otherTemplates";
+			if (parts.length > 1) {
+				const parentFolder = parts[parts.length - 2].toLowerCase();
+				if (parentFolder === "issue_templates") {
+					groupKey = "issueTemplates";
+				} else if (parentFolder === "merge_request_templates") {
+					groupKey = "mergeRequestTemplates";
+				}
+			}
+			groups[groupKey].push(template);
+		}
+
+		return groups;
+	};
+
+	const renderTemplateGroup = (
+		title: string,
+		groupTemplates: TemplateFile[],
+		showSeparator: boolean,
+	) => {
+		if (groupTemplates.length === 0) return null;
+
+		return (
+			<React.Fragment key={title}>
+				{showSeparator && <div className="gl-template-category-separator" />}
+				<div className="gl-template-category-header">{title}</div>
+				{groupTemplates.map((template) => {
+					const isSelected = template.path === selectedPath;
+					return (
+						<div
+							key={template.id}
+							onClick={() => handleSelectTemplate(template.path)}
+							className={`gl-template-option gl-new-dropdown-item-content ${isSelected ? "selected" : ""}`}
+						>
+							{isSelected && (
+								<span className="gl-template-option-check">
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="3.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										style={{
+											width: "100%",
+											height: "100%",
+											fill: "none",
+											stroke: "#3894ff",
+										}}
+									>
+										<polyline points="20 6 9 17 4 12"></polyline>
+									</svg>
+								</span>
+							)}
+							{formatTemplateName(template.name)}
+						</div>
+					);
+				})}
+			</React.Fragment>
+		);
+	};
+
 	return (
 		<div
 			className="gl-w-30 gl-new-dropdown gl-new-dropdown-panel !gl-block gl-template-dropdown-container"
@@ -356,43 +472,54 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 								{t("dropdown.noResults")}
 							</div>
 						) : (
-							filteredTemplates.map((template) => {
-								const isSelected = template.path === selectedPath;
-								return (
-									<div
-										key={template.id}
-										onClick={() => handleSelectTemplate(template.path)}
-										className={`gl-template-option gl-new-dropdown-item-content ${isSelected ? "selected" : ""}`}
-									>
-										{isSelected && (
-											<span className="gl-template-option-check">
-												<svg
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="3.5"
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													style={{
-														width: "100%",
-														height: "100%",
-														fill: "none",
-														stroke: "#3894ff",
-													}}
-												>
-													<polyline points="20 6 9 17 4 12"></polyline>
-												</svg>
-											</span>
-										)}
-										{formatTemplateName(template.name)}
-									</div>
-								);
-							})
+							(() => {
+								const groups = getGroupedTemplates();
+								const viewType = getCurrentViewType();
+
+								// Determine render order based on current view
+								const renderOrder: Array<{
+									title: string;
+									templates: TemplateFile[];
+								}> = [];
+
+								if (viewType === "merge_request") {
+									renderOrder.push(
+										{ title: t("dropdown.mergeRequestTemplates"), templates: groups.mergeRequestTemplates },
+										{ title: t("dropdown.issueTemplates"), templates: groups.issueTemplates },
+										{ title: t("dropdown.otherTemplates"), templates: groups.otherTemplates },
+									);
+								} else {
+									// Default: issue templates first
+									renderOrder.push(
+										{ title: t("dropdown.issueTemplates"), templates: groups.issueTemplates },
+										{ title: t("dropdown.mergeRequestTemplates"), templates: groups.mergeRequestTemplates },
+										{ title: t("dropdown.otherTemplates"), templates: groups.otherTemplates },
+									);
+								}
+
+								const renderedGroups: React.ReactNode[] = [];
+								let hasAnyContentBefore = false;
+
+								for (const group of renderOrder) {
+									if (group.templates.length > 0) {
+										renderedGroups.push(
+											renderTemplateGroup(
+												group.title,
+												group.templates,
+												hasAnyContentBefore,
+											),
+										);
+										hasAnyContentBefore = true;
+									}
+								}
+
+								return renderedGroups;
+							})()
 						)}
 					</div>
 
 					<div className="gl-template-menu-divider"></div>
-					<div className="gl-border-t gl-border-t-dropdown gl-p-2 gl-pt-0">
+					<div className="gl-p-2 gl-pt-0">
 						<button
 							className="gl-mt-2 !gl-justify-start btn gl-button btn-default btn-md btn-block btn-default-tertiary"
 							onClick={handleNoTemplate}

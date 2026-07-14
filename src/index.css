@@ -24,10 +24,10 @@
 }
 
 .settings-page-wrapper.light {
-  background-color: #ffffff;
+  background-color: #f3f3f6;
   color: #1f1f1f;
 
-  --gl-bg-page: #ffffff;
+  --gl-bg-page: #f3f3f6;
   --gl-bg-card: #ffffff;
   --gl-bg-card-footer: #fafafa;
   --gl-border-color: #dbdbdb;
@@ -37,12 +37,12 @@
   --gl-input-bg: #ffffff;
   --gl-input-border: #89929b;
   --gl-input-focus-border: #1f75cb;
-  --gl-input-focus-ring: rgba(31, 117, 203, 0.2);
-  --gl-btn-primary-bg: #1f75cb;
-  --gl-btn-primary-hover: #1068bf;
+  --gl-input-focus-ring: rgba(31, 117, 203, 0.25);
+  --gl-btn-primary-bg: #1068bf;
+  --gl-btn-primary-hover: #0b4f93;
   --gl-btn-primary-text: #ffffff;
   --gl-btn-secondary-bg: #ffffff;
-  --gl-btn-secondary-border: #89929b;
+  --gl-btn-secondary-border: #bfbfbf;
   --gl-btn-secondary-text: #1f1f1f;
   --gl-btn-secondary-hover: #f2f2f2;
   --gl-btn-secondary-active: #e9e9e9;
@@ -57,28 +57,28 @@
 }
 
 .settings-page-wrapper.dark {
-  background-color: #181818;
-  color: #e4e4e4;
+  background-color: #18171d;
+  color: #dbdbde;
 
-  --gl-bg-page: #181818;
-  --gl-bg-card: #1f1f1f;
-  --gl-bg-card-footer: #181818;
-  --gl-border-color: #303030;
-  --gl-text-primary: #e4e4e4;
-  --gl-text-secondary: #8c8c8c;
-  --gl-text-muted: #525252;
-  --gl-input-bg: #181818;
-  --gl-input-border: #525252;
+  --gl-bg-page: #18171d;
+  --gl-bg-card: #1f1e24;
+  --gl-bg-card-footer: #18171d;
+  --gl-border-color: #34323d;
+  --gl-text-primary: #dbdbde;
+  --gl-text-secondary: #8c8b96;
+  --gl-text-muted: #62616f;
+  --gl-input-bg: #18171d;
+  --gl-input-border: #535162;
   --gl-input-focus-border: #3894ff;
   --gl-input-focus-ring: rgba(56, 148, 255, 0.25);
-  --gl-btn-primary-bg: #1f75cb;
-  --gl-btn-primary-hover: #1068bf;
+  --gl-btn-primary-bg: #1b6ac6;
+  --gl-btn-primary-hover: #237cd8;
   --gl-btn-primary-text: #ffffff;
-  --gl-btn-secondary-bg: #1f1f1f;
-  --gl-btn-secondary-border: #525252;
-  --gl-btn-secondary-text: #e4e4e4;
-  --gl-btn-secondary-hover: #282828;
-  --gl-btn-secondary-active: #303030;
+  --gl-btn-secondary-bg: #1f1e24;
+  --gl-btn-secondary-border: #535162;
+  --gl-btn-secondary-text: #dbdbde;
+  --gl-btn-secondary-hover: #28272d;
+  --gl-btn-secondary-active: #34323d;
   --gl-link-color: #3894ff;
   
   --gl-success-bg: rgba(16, 185, 129, 0.08);
@@ -93,18 +93,32 @@
 .gl-heading {
   font-size: 23px;
   font-weight: 600;
-  margin-bottom: 24px;
+  margin-bottom: 0;
   color: var(--gl-text-primary);
+}
+
+.gl-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--gl-text-primary);
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+
+.gl-section-subtitle {
+  font-size: 13px;
+  color: var(--gl-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
 }
 
 .gl-card {
   width: 100%;
-  max-width: 960px;
   background-color: var(--gl-bg-card);
   border: 1px solid var(--gl-border-color);
   border-radius: 4px;
   overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
 }
 
 .gl-card-header {
@@ -171,7 +185,7 @@
 
 .gl-input:focus {
   border-color: var(--gl-input-focus-border);
-  box-shadow: 0 0 0 1px var(--gl-input-bg), 0 0 0 3px var(--gl-input-focus-border);
+  box-shadow: 0 0 0 2px var(--gl-input-focus-ring);
 }
 
 .gl-input::placeholder {
