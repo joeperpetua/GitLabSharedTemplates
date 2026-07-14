@@ -272,6 +272,81 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 			.includes(searchQuery.toLowerCase()),
 	);
 
+	const getGroupedTemplates = () => {
+		const groups: {
+			issueTemplates: TemplateFile[];
+			mergeRequestTemplates: TemplateFile[];
+			otherTemplates: TemplateFile[];
+		} = {
+			issueTemplates: [],
+			mergeRequestTemplates: [],
+			otherTemplates: [],
+		};
+
+		for (const template of filteredTemplates) {
+			const parts = template.path.split("/");
+			let groupKey: "issueTemplates" | "mergeRequestTemplates" | "otherTemplates" = "otherTemplates";
+			if (parts.length > 1) {
+				const parentFolder = parts[parts.length - 2].toLowerCase();
+				if (parentFolder === "issue_templates") {
+					groupKey = "issueTemplates";
+				} else if (parentFolder === "merge_request_templates") {
+					groupKey = "mergeRequestTemplates";
+				}
+			}
+			groups[groupKey].push(template);
+		}
+
+		return groups;
+	};
+
+	const renderTemplateGroup = (
+		title: string,
+		groupTemplates: TemplateFile[],
+		showSeparator: boolean,
+	) => {
+		if (groupTemplates.length === 0) return null;
+
+		return (
+			<React.Fragment key={title}>
+				{showSeparator && <div className="gl-template-category-separator" />}
+				<div className="gl-template-category-header">{title}</div>
+				{groupTemplates.map((template) => {
+					const isSelected = template.path === selectedPath;
+					return (
+						<div
+							key={template.id}
+							onClick={() => handleSelectTemplate(template.path)}
+							className={`gl-template-option gl-new-dropdown-item-content ${isSelected ? "selected" : ""}`}
+						>
+							{isSelected && (
+								<span className="gl-template-option-check">
+									<svg
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										strokeWidth="3.5"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+										style={{
+											width: "100%",
+											height: "100%",
+											fill: "none",
+											stroke: "#3894ff",
+										}}
+									>
+										<polyline points="20 6 9 17 4 12"></polyline>
+									</svg>
+								</span>
+							)}
+							{formatTemplateName(template.name)}
+						</div>
+					);
+				})}
+			</React.Fragment>
+		);
+	};
+
 	return (
 		<div
 			className="gl-w-30 gl-new-dropdown gl-new-dropdown-panel !gl-block gl-template-dropdown-container"
@@ -356,38 +431,45 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 								{t("dropdown.noResults")}
 							</div>
 						) : (
-							filteredTemplates.map((template) => {
-								const isSelected = template.path === selectedPath;
-								return (
-									<div
-										key={template.id}
-										onClick={() => handleSelectTemplate(template.path)}
-										className={`gl-template-option gl-new-dropdown-item-content ${isSelected ? "selected" : ""}`}
-									>
-										{isSelected && (
-											<span className="gl-template-option-check">
-												<svg
-													viewBox="0 0 24 24"
-													fill="none"
-													stroke="currentColor"
-													strokeWidth="3.5"
-													strokeLinecap="round"
-													strokeLinejoin="round"
-													style={{
-														width: "100%",
-														height: "100%",
-														fill: "none",
-														stroke: "#3894ff",
-													}}
-												>
-													<polyline points="20 6 9 17 4 12"></polyline>
-												</svg>
-											</span>
-										)}
-										{formatTemplateName(template.name)}
-									</div>
-								);
-							})
+							(() => {
+								const groups = getGroupedTemplates();
+								const renderedGroups: React.ReactNode[] = [];
+								let hasAnyContentBefore = false;
+
+								if (groups.issueTemplates.length > 0) {
+									renderedGroups.push(
+										renderTemplateGroup(
+											t("dropdown.issueTemplates"),
+											groups.issueTemplates,
+											hasAnyContentBefore,
+										),
+									);
+									hasAnyContentBefore = true;
+								}
+
+								if (groups.mergeRequestTemplates.length > 0) {
+									renderedGroups.push(
+										renderTemplateGroup(
+											t("dropdown.mergeRequestTemplates"),
+											groups.mergeRequestTemplates,
+											hasAnyContentBefore,
+										),
+									);
+									hasAnyContentBefore = true;
+								}
+
+								if (groups.otherTemplates.length > 0) {
+									renderedGroups.push(
+										renderTemplateGroup(
+											t("dropdown.otherTemplates"),
+											groups.otherTemplates,
+											hasAnyContentBefore,
+										),
+									);
+								}
+
+								return renderedGroups;
+							})()
 						)}
 					</div>
 

@@ -206,6 +206,18 @@ export const injectStyles = () => {
       max-height: 180px;
       overflow-y: auto;
       padding: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--gl-template-border) transparent;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .gl-template-menu-options-list::-webkit-scrollbar-thumb {
+      background-color: var(--gl-template-border);
+      border-radius: 4px;
     }
     
     /* Option item */
@@ -256,6 +268,22 @@ export const injectStyles = () => {
       height: 1px;
       background-color: var(--gl-template-border);
       margin: 4px 0;
+    }
+    
+    .gl-template-category-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--gl-template-text-secondary);
+      padding: 8px 10px 4px;
+      text-align: left;
+      letter-spacing: 0.04em;
+    }
+    
+    .gl-template-category-separator {
+      height: 1px;
+      background-color: var(--gl-template-border);
+      margin: 6px 10px;
     }
     
     .gl-template-footer-btn {
