@@ -31,7 +31,198 @@ function logDebug(...args: any[]) {
 	}
 }
 
-export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
+// Apply content to a plain text textarea, either replacing it entirely or inserting
+// at the current cursor position, then notify GitLab's own listeners of the change.
+function applyContentToTextarea(
+	el: HTMLTextAreaElement,
+	content: string,
+	overwrite: boolean,
+) {
+	el.focus();
+
+	if (overwrite) {
+		el.value = content;
+		const endPos = content.length;
+		el.selectionStart = endPos;
+		el.selectionEnd = endPos;
+	} else {
+		const startPos = el.selectionStart;
+		const endPos = el.selectionEnd;
+		const value = el.value;
+
+		let textToInsert = content;
+		if (startPos > 0 && value.charAt(startPos - 1) !== "\n") {
+			textToInsert = "\n" + textToInsert;
+		}
+		if (endPos < value.length && value.charAt(endPos) !== "\n") {
+			textToInsert = textToInsert + "\n";
+		}
+
+		el.value =
+			value.substring(0, startPos) + textToInsert + value.substring(endPos);
+
+		const newCursorPos = startPos + textToInsert.length;
+		el.selectionStart = newCursorPos;
+		el.selectionEnd = newCursorPos;
+	}
+
+	el.dispatchEvent(new Event("input", { bubbles: true }));
+	el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+// Re-resolve the rich text editor's contenteditable element from scratch via the
+// field's stable id. GitLab can replace the whole editor wrapper across renders, so
+// we can't rely on a previously-captured element reference here.
+function findRichTextEditable(fieldId: string): HTMLElement | null {
+	const label = document.querySelector(`label[for="${fieldId}"]`);
+	const formGroup = label?.closest(".form-group, .gl-form-group, .common-note-form");
+	const scope = formGroup || document;
+	return scope.querySelector<HTMLElement>(
+		'[data-testid="content-editor"] [contenteditable="true"]',
+	);
+}
+
+// Simulate Ctrl+A / Cmd+A. If the editor binds Mod-a to its own "select all" command
+// (common in ProseMirror-based editors), this lets it select everything according to
+// its own internal document model - including atomic/leaf nodes (like GitLab's
+// rendered HTML comment blocks) that a DOM Range constructed from outside the editor
+// isn't guaranteed to span correctly. If nothing is bound to it, this is a no-op.
+function dispatchSelectAllKey(el: HTMLElement) {
+	const isMac = navigator.platform.toLowerCase().includes("mac");
+	const keyEvent = new KeyboardEvent("keydown", {
+		key: "a",
+		code: "KeyA",
+		keyCode: 65,
+		which: 65,
+		ctrlKey: !isMac,
+		metaKey: isMac,
+		bubbles: true,
+		cancelable: true,
+	});
+	el.dispatchEvent(keyEvent);
+}
+
+// Select the editable element's entire contents, or collapse the cursor to its end.
+function selectRichTextRange(el: HTMLElement, collapseToEnd: boolean) {
+	el.focus();
+	const selection = window.getSelection();
+	if (!selection) return;
+
+	// Baseline selection via the DOM Selection API.
+	const range = document.createRange();
+	range.selectNodeContents(el);
+	if (collapseToEnd) {
+		range.collapse(false);
+	}
+	selection.removeAllRanges();
+	selection.addRange(range);
+
+	// For select-all, additionally try the editor's own Mod-a command, which can
+	// override the baseline above with a more accurate selection if one is bound.
+	if (!collapseToEnd) {
+		dispatchSelectAllKey(el);
+	}
+}
+
+// Simulate a clipboard paste of plain text markdown into a ProseMirror/TipTap
+// contenteditable. This goes through the editor's own paste-handling pipeline (the
+// same one GitLab's content editor already uses to parse pasted markdown into rich
+// formatting), rather than mutating its DOM/internal document state directly - which
+// ProseMirror does not keep in sync with direct DOM edits.
+function dispatchMarkdownPaste(el: HTMLElement, content: string) {
+	const clipboardData = new DataTransfer();
+	clipboardData.setData("text/plain", content);
+
+	const pasteEvent = new ClipboardEvent("paste", {
+		clipboardData,
+		bubbles: true,
+		cancelable: true,
+	});
+
+	el.dispatchEvent(pasteEvent);
+}
+
+// Simulate a Backspace keypress to delete the current selection. ProseMirror's paste
+// handling only acts when clipboard text/plain is truthy, so pasting an empty string
+// to "clear" the editor is silently ignored - it leaves the selection sitting there
+// untouched. Deleting the selection is a distinct command (bound to Backspace/Delete
+// in ProseMirror's keymap) that isn't gated on clipboard content, so it reliably
+// clears whatever is currently selected.
+function dispatchDeleteKey(el: HTMLElement) {
+	const keyEvent = new KeyboardEvent("keydown", {
+		key: "Backspace",
+		code: "Backspace",
+		keyCode: 8,
+		which: 8,
+		bubbles: true,
+		cancelable: true,
+	});
+	el.dispatchEvent(keyEvent);
+}
+
+const CLEAR_RICH_TEXT_MAX_ATTEMPTS = 20;
+
+// Repeatedly select-all and press Backspace until the editor is genuinely empty.
+// A single pass isn't always enough: atomic/structural nodes (e.g. GitLab's rendered
+// HTML comment blocks) and empty leftover nodes (e.g. a heading whose text was
+// deleted but not the heading element itself) can each require their own Backspace
+// to fully collapse, the same way a real user would need to press Backspace more
+// than once. Convergence is checked via innerHTML rather than textContent, since a
+// purely structural change (like removing a now-empty heading) leaves textContent
+// unchanged but still needs its own pass.
+async function clearRichTextEditor(el: HTMLElement) {
+	let previousHtml: string | null = null;
+
+	for (let attempt = 0; attempt < CLEAR_RICH_TEXT_MAX_ATTEMPTS; attempt++) {
+		const currentHtml = el.innerHTML;
+		if (currentHtml === previousHtml) {
+			logDebug(`[Ext] Clearing rich text editor converged after ${attempt} attempt(s).`);
+			return;
+		}
+		previousHtml = currentHtml;
+
+		selectRichTextRange(el, false);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		dispatchDeleteKey(el);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
+
+	logDebug("[Ext] Gave up clearing rich text editor after max attempts.");
+}
+
+// Apply content to the rich text editor, either replacing it entirely or inserting at
+// the current cursor position, then notify GitLab's own listeners of the change.
+async function applyContentToRichText(
+	el: HTMLElement,
+	content: string,
+	overwrite: boolean,
+) {
+	if (overwrite) {
+		await clearRichTextEditor(el);
+	} else {
+		const selection = window.getSelection();
+		if (!selection || !el.contains(selection.anchorNode)) {
+			selectRichTextRange(el, true);
+		} else {
+			el.focus();
+		}
+
+		// Give ProseMirror a tick to sync its internal selection from the DOM
+		// selection we just set, before the paste event is handled against it. Uses
+		// setTimeout rather than requestAnimationFrame, since rAF never fires for a
+		// backgrounded or non-visible tab and would hang this indefinitely.
+		await new Promise((resolve) => setTimeout(resolve, 0));
+	}
+
+	if (content !== "") {
+		dispatchMarkdownPaste(el, content);
+	}
+
+	el.dispatchEvent(new Event("input", { bubbles: true }));
+	el.dispatchEvent(new Event("change", { bubbles: true }));
+}
+
+export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea, richTextFieldId }) => {
 	const { t } = useI18n();
 	const [templates, setTemplates] = useState<TemplateFile[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -122,6 +313,47 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 		}
 	}, [isOpen]);
 
+	// Apply content to whichever editor is currently live. In plain text mode this
+	// writes straight to the textarea. In rich text mode there's no textarea to write
+	// to, so we briefly switch GitLab's own editor to plain text mode, write to the
+	// textarea it reveals, then switch back to rich text - letting GitLab's own
+	// markdown/rich text conversion do the rest.
+	const setEditorContent = async (content: string, overwrite: boolean) => {
+		if (textarea) {
+			if (!hasSavedInitialRef.current) {
+				initialTextRef.current = textarea.value;
+				hasSavedInitialRef.current = true;
+			}
+			applyContentToTextarea(textarea, content, overwrite);
+			return;
+		}
+
+		if (!richTextFieldId) return;
+
+		const editableEl = findRichTextEditable(richTextFieldId);
+		if (!editableEl) {
+			logDebug("[Ext] Could not find rich text editable element for field.");
+			return;
+		}
+
+		if (!hasSavedInitialRef.current) {
+			// The rendered DOM only has formatted rich text, not the original markdown
+			// source, so this is a best-effort plain text approximation of the initial
+			// content (used only if the user resets back to it).
+			initialTextRef.current = editableEl.textContent || "";
+			hasSavedInitialRef.current = true;
+		}
+
+		await applyContentToRichText(editableEl, content, overwrite);
+	};
+
+	const insertContent = (content: string) => {
+		chrome.storage.sync.get({ shouldOverwrite: true }, (items) => {
+			const overwrite = (items.shouldOverwrite as boolean) ?? true;
+			setEditorContent(content, overwrite);
+		});
+	};
+
 	const handleSelectTemplate = async (templatePath: string) => {
 		setInserting(true);
 		setSelectedPath(templatePath);
@@ -148,79 +380,27 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea }) => {
 	};
 
 	const handleNoTemplate = () => {
-		if (!textarea) return;
-		textarea.focus();
-		textarea.value = "";
 		setSelectedPath("");
 		setIsOpen(false);
-		hasSavedInitialRef.current = false;
-		textarea.dispatchEvent(new Event("input", { bubbles: true }));
-		textarea.dispatchEvent(new Event("change", { bubbles: true }));
+		setEditorContent("", true).finally(() => {
+			hasSavedInitialRef.current = false;
+		});
 	};
 
 	const handleResetTemplate = () => {
-		if (!textarea) return;
 		if (selectedPath) {
 			handleSelectTemplate(selectedPath);
 		} else {
-			textarea.focus();
-			textarea.value = initialTextRef.current;
 			setSelectedPath("");
 			setIsOpen(false);
 			hasSavedInitialRef.current = false;
-			textarea.dispatchEvent(new Event("input", { bubbles: true }));
-			textarea.dispatchEvent(new Event("change", { bubbles: true }));
+			setEditorContent(initialTextRef.current, true);
 		}
 	};
 
 	const handleOpenSettings = () => {
 		chrome.runtime.sendMessage({ type: "OPEN_OPTIONS_PAGE" });
 		setIsOpen(false);
-	};
-
-	const insertContent = (content: string) => {
-		if (!textarea) return;
-
-		// Save the initial content before the first template insertion
-		if (!hasSavedInitialRef.current) {
-			initialTextRef.current = textarea.value;
-			hasSavedInitialRef.current = true;
-		}
-
-		chrome.storage.sync.get({ shouldOverwrite: true }, (items) => {
-			const overwrite = items.shouldOverwrite ?? true;
-
-			textarea.focus();
-
-			if (overwrite) {
-				textarea.value = content;
-				const endPos = content.length;
-				textarea.selectionStart = endPos;
-				textarea.selectionEnd = endPos;
-			} else {
-				const startPos = textarea.selectionStart;
-				const endPos = textarea.selectionEnd;
-				const value = textarea.value;
-
-				let textToInsert = content;
-				if (startPos > 0 && value.charAt(startPos - 1) !== "\n") {
-					textToInsert = "\n" + textToInsert;
-				}
-				if (endPos < value.length && value.charAt(endPos) !== "\n") {
-					textToInsert = textToInsert + "\n";
-				}
-
-				textarea.value =
-					value.substring(0, startPos) + textToInsert + value.substring(endPos);
-
-				const newCursorPos = startPos + textToInsert.length;
-				textarea.selectionStart = newCursorPos;
-				textarea.selectionEnd = newCursorPos;
-			}
-
-			textarea.dispatchEvent(new Event("input", { bubbles: true }));
-			textarea.dispatchEvent(new Event("change", { bubbles: true }));
-		});
 	};
 
 	const formatTemplateName = (name: string) => {
