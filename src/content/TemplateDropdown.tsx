@@ -70,156 +70,46 @@ function applyContentToTextarea(
 	el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-// Re-resolve the rich text editor's contenteditable element from scratch via the
+// Re-resolve the rich text editor's mode-switcher button from scratch via the
 // field's stable id. GitLab can replace the whole editor wrapper across renders, so
 // we can't rely on a previously-captured element reference here.
-function findRichTextEditable(fieldId: string): HTMLElement | null {
+function findEditingModeSwitcher(fieldId: string): HTMLButtonElement | null {
 	const label = document.querySelector(`label[for="${fieldId}"]`);
 	const formGroup = label?.closest(".form-group, .gl-form-group, .common-note-form");
 	const scope = formGroup || document;
-	return scope.querySelector<HTMLElement>(
-		'[data-testid="content-editor"] [contenteditable="true"]',
-	);
+	return scope.querySelector<HTMLButtonElement>('[data-testid="editing-mode-switcher"]');
 }
 
-// Simulate Ctrl+A / Cmd+A. If the editor binds Mod-a to its own "select all" command
-// (common in ProseMirror-based editors), this lets it select everything according to
-// its own internal document model - including atomic/leaf nodes (like GitLab's
-// rendered HTML comment blocks) that a DOM Range constructed from outside the editor
-// isn't guaranteed to span correctly. If nothing is bound to it, this is a no-op.
-function dispatchSelectAllKey(el: HTMLElement) {
-	const isMac = navigator.platform.toLowerCase().includes("mac");
-	const keyEvent = new KeyboardEvent("keydown", {
-		key: "a",
-		code: "KeyA",
-		keyCode: 65,
-		which: 65,
-		ctrlKey: !isMac,
-		metaKey: isMac,
-		bubbles: true,
-		cancelable: true,
+const RICH_TEXT_TOGGLE_TIMEOUT_MS = 2000;
+
+// Poll for an element matching `selector` anywhere in the document - used to wait for
+// the plain text textarea GitLab reveals after clicking its rich text editor's mode
+// switcher. Polls document-wide via MutationObserver rather than watching a captured
+// element reference, since GitLab can replace that whole element across the toggle.
+function waitForElement<T extends Element>(
+	selector: string,
+	timeoutMs: number,
+): Promise<T | null> {
+	const existing = document.querySelector<T>(selector);
+	if (existing) return Promise.resolve(existing);
+
+	return new Promise((resolve) => {
+		const observer = new MutationObserver(() => {
+			const found = document.querySelector<T>(selector);
+			if (found) {
+				observer.disconnect();
+				clearTimeout(timer);
+				resolve(found);
+			}
+		});
+
+		observer.observe(document.body, { childList: true, subtree: true });
+
+		const timer = setTimeout(() => {
+			observer.disconnect();
+			resolve(null);
+		}, timeoutMs);
 	});
-	el.dispatchEvent(keyEvent);
-}
-
-// Select the editable element's entire contents, or collapse the cursor to its end.
-function selectRichTextRange(el: HTMLElement, collapseToEnd: boolean) {
-	el.focus();
-	const selection = window.getSelection();
-	if (!selection) return;
-
-	// Baseline selection via the DOM Selection API.
-	const range = document.createRange();
-	range.selectNodeContents(el);
-	if (collapseToEnd) {
-		range.collapse(false);
-	}
-	selection.removeAllRanges();
-	selection.addRange(range);
-
-	// For select-all, additionally try the editor's own Mod-a command, which can
-	// override the baseline above with a more accurate selection if one is bound.
-	if (!collapseToEnd) {
-		dispatchSelectAllKey(el);
-	}
-}
-
-// Simulate a clipboard paste of plain text markdown into a ProseMirror/TipTap
-// contenteditable. This goes through the editor's own paste-handling pipeline (the
-// same one GitLab's content editor already uses to parse pasted markdown into rich
-// formatting), rather than mutating its DOM/internal document state directly - which
-// ProseMirror does not keep in sync with direct DOM edits.
-function dispatchMarkdownPaste(el: HTMLElement, content: string) {
-	const clipboardData = new DataTransfer();
-	clipboardData.setData("text/plain", content);
-
-	const pasteEvent = new ClipboardEvent("paste", {
-		clipboardData,
-		bubbles: true,
-		cancelable: true,
-	});
-
-	el.dispatchEvent(pasteEvent);
-}
-
-// Simulate a Backspace keypress to delete the current selection. ProseMirror's paste
-// handling only acts when clipboard text/plain is truthy, so pasting an empty string
-// to "clear" the editor is silently ignored - it leaves the selection sitting there
-// untouched. Deleting the selection is a distinct command (bound to Backspace/Delete
-// in ProseMirror's keymap) that isn't gated on clipboard content, so it reliably
-// clears whatever is currently selected.
-function dispatchDeleteKey(el: HTMLElement) {
-	const keyEvent = new KeyboardEvent("keydown", {
-		key: "Backspace",
-		code: "Backspace",
-		keyCode: 8,
-		which: 8,
-		bubbles: true,
-		cancelable: true,
-	});
-	el.dispatchEvent(keyEvent);
-}
-
-const CLEAR_RICH_TEXT_MAX_ATTEMPTS = 20;
-
-// Repeatedly select-all and press Backspace until the editor is genuinely empty.
-// A single pass isn't always enough: atomic/structural nodes (e.g. GitLab's rendered
-// HTML comment blocks) and empty leftover nodes (e.g. a heading whose text was
-// deleted but not the heading element itself) can each require their own Backspace
-// to fully collapse, the same way a real user would need to press Backspace more
-// than once. Convergence is checked via innerHTML rather than textContent, since a
-// purely structural change (like removing a now-empty heading) leaves textContent
-// unchanged but still needs its own pass.
-async function clearRichTextEditor(el: HTMLElement) {
-	let previousHtml: string | null = null;
-
-	for (let attempt = 0; attempt < CLEAR_RICH_TEXT_MAX_ATTEMPTS; attempt++) {
-		const currentHtml = el.innerHTML;
-		if (currentHtml === previousHtml) {
-			logDebug(`[Ext] Clearing rich text editor converged after ${attempt} attempt(s).`);
-			return;
-		}
-		previousHtml = currentHtml;
-
-		selectRichTextRange(el, false);
-		await new Promise((resolve) => setTimeout(resolve, 0));
-		dispatchDeleteKey(el);
-		await new Promise((resolve) => setTimeout(resolve, 0));
-	}
-
-	logDebug("[Ext] Gave up clearing rich text editor after max attempts.");
-}
-
-// Apply content to the rich text editor, either replacing it entirely or inserting at
-// the current cursor position, then notify GitLab's own listeners of the change.
-async function applyContentToRichText(
-	el: HTMLElement,
-	content: string,
-	overwrite: boolean,
-) {
-	if (overwrite) {
-		await clearRichTextEditor(el);
-	} else {
-		const selection = window.getSelection();
-		if (!selection || !el.contains(selection.anchorNode)) {
-			selectRichTextRange(el, true);
-		} else {
-			el.focus();
-		}
-
-		// Give ProseMirror a tick to sync its internal selection from the DOM
-		// selection we just set, before the paste event is handled against it. Uses
-		// setTimeout rather than requestAnimationFrame, since rAF never fires for a
-		// backgrounded or non-visible tab and would hang this indefinitely.
-		await new Promise((resolve) => setTimeout(resolve, 0));
-	}
-
-	if (content !== "") {
-		dispatchMarkdownPaste(el, content);
-	}
-
-	el.dispatchEvent(new Event("input", { bubbles: true }));
-	el.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
 export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea, richTextFieldId }) => {
@@ -330,21 +220,33 @@ export const TemplateDropdown: React.FC<DropdownProps> = ({ textarea, richTextFi
 
 		if (!richTextFieldId) return;
 
-		const editableEl = findRichTextEditable(richTextFieldId);
-		if (!editableEl) {
-			logDebug("[Ext] Could not find rich text editable element for field.");
+		const switchToPlainBtn = findEditingModeSwitcher(richTextFieldId);
+		if (!switchToPlainBtn) {
+			logDebug("[Ext] Could not find editing mode switcher on rich text field.");
+			return;
+		}
+
+		switchToPlainBtn.click();
+
+		const plainTextarea = await waitForElement<HTMLTextAreaElement>(
+			`textarea#${CSS.escape(richTextFieldId)}`,
+			RICH_TEXT_TOGGLE_TIMEOUT_MS,
+		);
+
+		if (!plainTextarea) {
+			logDebug("[Ext] Timed out waiting for plain text editor to appear.");
 			return;
 		}
 
 		if (!hasSavedInitialRef.current) {
-			// The rendered DOM only has formatted rich text, not the original markdown
-			// source, so this is a best-effort plain text approximation of the initial
-			// content (used only if the user resets back to it).
-			initialTextRef.current = editableEl.textContent || "";
+			initialTextRef.current = plainTextarea.value;
 			hasSavedInitialRef.current = true;
 		}
 
-		await applyContentToRichText(editableEl, content, overwrite);
+		applyContentToTextarea(plainTextarea, content, overwrite);
+
+		const switchToRichBtn = findEditingModeSwitcher(richTextFieldId);
+		switchToRichBtn?.click();
 	};
 
 	const insertContent = (content: string) => {
