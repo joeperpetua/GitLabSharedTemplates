@@ -34,8 +34,8 @@ This browser extension is fully compatible with **Google Chrome** (and other Chr
 
 ### Official Extension Stores
 The extension is available for direct installation in the browser stores:
-* **Chrome Web Store** (for Google Chrome, Microsoft Edge, Brave, Opera, etc.)
-* **Firefox Add-ons (AMO)** (for Mozilla Firefox)
+* [**Chrome Web Store**](https://chromewebstore.google.com/detail/gitlab-shared-templates/aaiplohdbkggnklaeedfpecnmilgadfn) (for Google Chrome, Microsoft Edge, Brave, Opera, etc.)
+* [**Firefox Add-ons (AMO)**](https://addons.mozilla.org/en-US/firefox/addon/gitlab-shared-templates/) (for Mozilla Firefox)
 
 ### Installing from Source / Developer Mode (Local Setup)
 If you prefer to build the extension manually or install it locally for development, follow these steps:
