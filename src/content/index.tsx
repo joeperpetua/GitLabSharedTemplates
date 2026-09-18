@@ -272,45 +272,97 @@ function injectDropdowns() {
 	});
 
 	// Rich text mode: GitLab replaces the textarea entirely with a ProseMirror-based
-	// content editor, so there's no textarea to anchor on. The `<label for="...">`
-	// pointing at these same description field ids stays in the DOM regardless of
-	// mode, so use it to relocate the field without also matching unrelated
-	// comment/reply boxes, which use the same rich text component.
+	// content editor, so there's no textarea to anchor on. Two ways to find it, because
+	// no single one covers every GitLab version and issuable type. Anchors from both
+	// land on the same `[data-testid="content-editor"]` element, so the map dedupes
+	// whenever both strategies match the same field.
+	//
+	// GitLab also spells these field ids two ways: the Vue work item forms (issues) use
+	// hyphens, while the Rails issuable form (merge requests) uses the Rails form
+	// builder spelling with underscores.
 	const descriptionFieldIds = [
 		"issue-description",
 		"merge-request-description",
 		"work-item-description",
+		"issue_description",
+		"merge_request_description",
+		"work_item_description",
 	];
 
+	// anchor element -> field id
+	const richTextFields = new Map<HTMLElement, string>();
+
+	// Strategy 1: the hidden input the content editor renders in place of the textarea,
+	// as a direct sibling. It carries the field's real id, so it finds merge requests
+	// without depending on how their label or test ids are spelled. The element wrapping
+	// the pair has changed classes across GitLab versions (older ones give it none at
+	// all), so scope off the input's own parent rather than a class name.
+	const hiddenInputSelectors = [
+		...descriptionFieldIds.map((fieldId) => `#${fieldId}`),
+		'[name="issue[description]"]',
+		'[name="merge_request[description]"]',
+		'[name="work_item[description]"]',
+	].map((selector) => `input[type="hidden"]${selector}`);
+
+	document
+		.querySelectorAll<HTMLInputElement>(hiddenInputSelectors.join(","))
+		.forEach((hiddenInput) => {
+			// The insert flow needs the id to toggle the editor back to plain text mode.
+			if (!hiddenInput.id) return;
+
+			const contentEditor = hiddenInput.parentElement?.querySelector<HTMLElement>(
+				'[data-testid="content-editor"]',
+			);
+
+			// Plain text mode, or GitLab's editor has not mounted over the
+			// server-rendered input yet.
+			if (!contentEditor) return;
+
+			richTextFields.set(contentEditor, hiddenInput.id);
+		});
+
+	logDebug(`[Ext] Rich text fields found via hidden input: ${richTextFields.size}`);
+
+	// Strategy 2: the `<label for="...">` pointing at a known description field id. It
+	// stays in the DOM regardless of editing mode, and covers the versions and pages
+	// where the hidden input is absent or sits outside the editor.
 	descriptionFieldIds.forEach((fieldId) => {
-		const label = document.querySelector(`label[for="${fieldId}"]`);
+		const label = document.querySelector(`label[for="${CSS.escape(fieldId)}"]`);
 		if (!label) return;
 
-		const formGroup = label.closest(
-			".form-group, .gl-form-group, .common-note-form",
-		);
-		const scope = formGroup || label.parentElement;
+		const scope =
+			label.closest(".form-group, .gl-form-group, .common-note-form") ||
+			label.parentElement;
 		if (!scope) return;
 
 		// Currently in plain text mode; already handled by the textarea pass above.
-		if (scope.querySelector("textarea")) {
-			return;
-		}
+		if (scope.querySelector("textarea")) return;
 
-		const field = scope.querySelector<HTMLElement>(
-			'[data-testid="markdown-editor-form-field"]',
+		const contentEditor = scope.querySelector<HTMLElement>(
+			'[data-testid="content-editor"]',
 		);
-		if (!field) return;
 
 		// Not actually showing the rich text content editor (e.g. still loading).
-		if (!field.querySelector('[data-testid="content-editor"]')) {
-			return;
-		}
+		if (!contentEditor) return;
 
-		const containerId = resolveContainerId(formGroup, field, `richtext-${fieldId}`);
+		richTextFields.set(contentEditor, fieldId);
+	});
+
+	logDebug(`[Ext] Rich text description fields to process: ${richTextFields.size}`);
+
+	richTextFields.forEach((fieldId, contentEditor) => {
+		// Anchor on the content editor rather than the surrounding markdown editor:
+		// GitLab destroys it when the user switches to plain text mode, which drops the
+		// "already injected" flag and lets the textarea pass above take over. Anchoring
+		// on the stable markdown editor root would leave the dropdown holding a
+		// detached textarea after a rich -> plain -> rich round trip.
+		const formGroup = contentEditor.closest(
+			".form-group, .gl-form-group, .common-note-form",
+		);
+		const containerId = resolveContainerId(formGroup, contentEditor, `richtext-${fieldId}`);
 
 		processField({
-			anchor: field,
+			anchor: contentEditor,
 			containerId,
 			textarea: null,
 			richTextFieldId: fieldId,
